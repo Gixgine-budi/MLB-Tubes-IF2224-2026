@@ -14,7 +14,7 @@ endif
 
 TARGET   := arion
 SRCDIR   := src
-OBJDIR   := build/obj
+OBJDIR   := bin
 
 # One level of subdirs (e.g. src/lexer/*.cpp); add more globs if you nest deeper
 SOURCES := $(wildcard $(SRCDIR)/*.cpp $(SRCDIR)/*/*.cpp)

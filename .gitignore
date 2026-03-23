@@ -1,0 +1,32 @@
+# Makefile / g++ (this project)
+build/
+arion
+
+# Compiled objects and deps (if built outside build/)
+*.o
+*.d
+
+# Local / OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Common C++ / CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+.cache/
+
+# Debug / coverage
+*.gcda
+*.gcno
+*.gcov
+core
+core.*
+
+# IDEs
+.vscode/
+.idea/
