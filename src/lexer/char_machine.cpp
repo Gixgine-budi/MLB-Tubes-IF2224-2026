@@ -7,7 +7,7 @@ namespace {
 
 char char_from_fgetc(int c) {
     assert(c != EOF);
-    return static_cast<char>(static_cast<unsigned char>(static_cast<unsigned int>(c)));
+    return static_cast<char>(c);
 }
 
 }  // namespace
@@ -49,6 +49,15 @@ bool CharMachine::adv() {
     }
     current_char = char_from_fgetc(c);
     return true;
+}
+
+void CharMachine::end() noexcept {
+    if (stream != nullptr) {
+        std::fclose(stream);
+        stream = nullptr;
+    }
+    eof = true;
+    current_char = '\0';
 }
 
 char CharMachine::curr() const {

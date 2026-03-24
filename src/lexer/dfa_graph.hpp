@@ -1,9 +1,11 @@
 #pragma once
+#include "char_machine.hpp"
+#include <string>
 #include <unordered_map>
-#include <set>
 #include <vector>
 
 enum class NodeType {
+    END_OF_FILE,
     INVALID,
     INTCON,
     REALCON,
@@ -59,14 +61,23 @@ enum class NodeType {
     COMMENT
 };
 
+struct Token {
+    NodeType type;
+    std::string lexeme;
+};
+
 class DFAGraphNode {
     private:
         std::unordered_map<char, DFAGraphNode*> transitions;
         const NodeType node_type;
+        const bool final_state;
 
     public:
-        DFAGraphNode(NodeType node_type);
-        virtual ~DFAGraphNode();
+        DFAGraphNode(NodeType node_type, bool is_final = false);
+        ~DFAGraphNode();
+
+        DFAGraphNode(const DFAGraphNode&) = delete;
+        DFAGraphNode& operator=(const DFAGraphNode&) = delete;
 
         /**
          * @brief Add a transition to the DFA graph
@@ -87,31 +98,50 @@ class DFAGraphNode {
         DFAGraphNode* get_transition(char input) const noexcept;
 
         NodeType get_node_type() const noexcept;
+        bool is_final() const noexcept;
 };
 
 
 class DFAGraph {
     private:
         std::vector<DFAGraphNode*> nodes;
+
         DFAGraphNode* start_node = nullptr;
-        std::set<DFAGraphNode*> final_nodes;
         DFAGraphNode* current_node = nullptr;
+
+        CharMachine* char_machine = nullptr; // non-owning
+
     public:
-        DFAGraph(std::vector<DFAGraphNode*> nodes, DFAGraphNode* start_node, std::set<DFAGraphNode*> final_nodes);
-        DFAGraph();
-        virtual ~DFAGraph();
+        DFAGraph(std::vector<DFAGraphNode*> nodes, DFAGraphNode* start_node, CharMachine* char_machine);
+        DFAGraph(CharMachine* char_machine);
+        ~DFAGraph();
+
+        DFAGraph(const DFAGraph&) = delete;
+        DFAGraph& operator=(const DFAGraph&) = delete;
 
         /**
-         * @brief Advance the DFA by consuming one character
+         * @brief Advance the DFA by consuming one character from the character machine.
+         *        On a successful transition, the character machine is advanced.
+         *        On failure (no transition or EOF), the character machine and current node are unchanged.
          *
-         * @param input            The input character
-         * @return int             -1 if there is no transition (or the machine was not reset / start is null)
-         *                         0 if the state after this transition is an accepting (final) state
-         *                         1 if the state after this transition is not accepting
+         * @return int             -2 if the machine is at the end of the input (nothing consumed)
+         *                         -1 if there is no transition for the current character (nothing consumed)
+         *                         0  if the state after this transition is an accepting (final) state
+         *                         1  if the state after this transition is not accepting
          *
          * @note A state can be accepting and still have outgoing transitions (e.g. longest-match lexing).
          */
-        int advance(char input);
+        int adv();
+
+        /**
+         * @brief Determine the next token by advancing through DFA transitions from the current input position.
+         *        Collects the matched lexeme and returns it along with the token type.
+         *        Returns END_OF_FILE immediately if the character machine is already at EOF.
+         *        Resets the DFA to the start node before returning.
+         *
+         * @return Token           The recognized token (type + lexeme), or END_OF_FILE at input end
+         */
+        Token next_token();
 
         /**
          * @brief Reset the DFA graph to the start node

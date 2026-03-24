@@ -9,19 +9,43 @@
  */
 class CharMachine {
     private:
+        FILE* stream;
         char current_char;
         bool eof;
     public:
-        FILE* stream;
-
         CharMachine(const std::string& filepath);
-        virtual ~CharMachine();
+        ~CharMachine();
 
-        /** Read the next character. Returns false at and after EOF (idempotent once EOF). */
+        CharMachine(const CharMachine&) = delete;
+        CharMachine& operator=(const CharMachine&) = delete;
+
+        /**
+         * @brief Advance the character machine by one character.
+         * 
+         * @return bool            True if the character was read successfully, false if the end of the stream was reached.
+         * @throws std::runtime_error If the stream is closed.
+         */
         bool adv();
 
-        /** Current character; throws if stream is closed or at EOF. */
+        /**
+         * @brief End the character machine.
+         * 
+         * @note This will close the stream and set the EOF flag to true.
+         */
+        void end() noexcept;
+
+        /**
+         * @brief Get the current character.
+         * 
+         * @return char            The current character.
+         * @throws std::runtime_error If the stream is closed or at EOF.
+         */
         char curr() const;
 
+        /**
+         * @brief Check if the character machine is at the end of the stream.
+         * 
+         * @return bool            True if the end of the stream was reached, false otherwise.
+         */
         bool is_eof() const noexcept;
 };
