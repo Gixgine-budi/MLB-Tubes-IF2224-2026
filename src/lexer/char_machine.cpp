@@ -3,73 +3,33 @@
 #include <cassert>
 #include <stdexcept>
 
-namespace {
-
-char char_from_fgetc(int c) {
-    assert(c != EOF);
-    return static_cast<char>(c);
-}
-
-}  // namespace
-
 CharMachine::CharMachine(const std::string& filepath) {
-    stream = std::fopen(filepath.c_str(), "r");
-    if (stream == nullptr) {
-        throw std::runtime_error("Failed to open file: " + filepath);
-    }
-    const int c = std::fgetc(stream);
-    if (c == EOF) {
-        eof = true;
-        current_char = '\0';
-    } else {
-        eof = false;
-        current_char = char_from_fgetc(c);
-    }
+  stream_.open(filepath);
+  if (!stream_.is_open())
+    throw std::runtime_error("Failed to open file " + filepath);
+  stream_.get(current_);
 }
 
 CharMachine::~CharMachine() {
-    if (stream != nullptr) {
-        std::fclose(stream);
-        stream = nullptr;
-    }
+  if (stream_.is_open()) {
+    stream_.close();
+  }
 }
 
-bool CharMachine::adv() {
-    if (stream == nullptr) {
-        throw std::runtime_error("Stream is not open");
-    }
-    if (eof) {
-        return false;
-    }
-    const int c = std::fgetc(stream);
-    if (c == EOF) {
-        eof = true;
-        current_char = '\0';
-        return false;
-    }
-    current_char = char_from_fgetc(c);
-    return true;
-}
+bool CharMachine::advance() {
+  if (!stream_.is_open()) throw std::runtime_error("Stream is not open");
+  if (eof()) {
+    current_ = '\0';
+    return false;
+  }
 
-void CharMachine::end() noexcept {
-    if (stream != nullptr) {
-        std::fclose(stream);
-        stream = nullptr;
-    }
-    eof = true;
-    current_char = '\0';
-}
+  stream_.get(current_);
+  if (current_ == '\n') {
+    line_num_++;
+    col_num_ = 1;
+  } else {
+    col_num_++;
+  }
 
-char CharMachine::curr() const {
-    if (stream == nullptr) {
-        throw std::runtime_error("Stream is not open");
-    }
-    if (eof) {
-        throw std::runtime_error("No current character at end of file");
-    }
-    return current_char;
-}
-
-bool CharMachine::is_eof() const noexcept {
-    return eof;
+  return true;
 }
