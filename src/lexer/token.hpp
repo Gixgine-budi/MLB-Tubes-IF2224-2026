@@ -69,10 +69,10 @@ enum class TokenType {
  *
  */
 struct Token {
-  TokenType type;
-  std::string lexeme;
-  int line_num;
-  int col_num;
+  TokenType type;      ///< Type of the token
+  std::string lexeme;  ///< Literal
+  int line_num;        ///< Line number started
+  int col_num;         ///< Column number started
 
   /**
    * @brief Print token in format "type(lexeme)" or "type"

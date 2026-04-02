@@ -255,6 +255,7 @@ bool Lexer::transition() {
         consume(c);
         next = State::IN_REALCON;
       } else {
+        // Currently only returns INTCON if there's a dot followed by non-digit
         next = TokenType::INTCON;
       }
       break;
