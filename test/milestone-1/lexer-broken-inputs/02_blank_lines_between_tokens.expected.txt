@@ -1,0 +1,18 @@
+programsy
+ident (P)
+semicolon
+
+beginsy
+
+ident (a)
+becomes
+intcon (1)
+semicolon
+
+
+ident (b)
+becomes
+intcon (2)
+semicolon
+endsy
+period

@@ -1,0 +1,33 @@
+programsy
+ident (P)
+semicolon
+constsy
+ident (c)
+colon
+ident (integer)
+semicolon
+typesy
+ident (T)
+colon
+ident (Char)
+semicolon
+varsy
+ident (v)
+colon
+ident (String)
+semicolon
+functionsy
+ident (F)
+semicolon
+proceduresy
+ident (G)
+semicolon
+arraysy
+ident (A)
+semicolon
+recordsy
+ident (R)
+semicolon
+beginsy
+endsy
+period

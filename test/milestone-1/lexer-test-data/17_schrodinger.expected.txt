@@ -1,0 +1,28 @@
+programsy
+ident (Schrodinger)
+semicolon
+varsy
+ident (cat)
+colon
+ident (integer)
+semicolon
+beginsy
+ident (cat)
+becomes
+intcon (1)
+semicolon
+ifsy
+ident (cat)
+eql
+intcon (1)
+thensy
+ident (cat)
+becomes
+intcon (0)
+elsesy
+ident (cat)
+becomes
+intcon (1)
+semicolon
+endsy
+period

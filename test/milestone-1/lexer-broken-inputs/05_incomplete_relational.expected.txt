@@ -1,0 +1,8 @@
+ident (a)
+lss
+gtr
+ident (b)
+semicolon
+ident (c)
+lss
+semicolon

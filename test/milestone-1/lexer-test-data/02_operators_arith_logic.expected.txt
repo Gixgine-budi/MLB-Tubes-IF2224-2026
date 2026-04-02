@@ -1,0 +1,17 @@
+ident (a)
+plus
+intcon (5)
+minus
+intcon (2)
+times
+intcon (3)
+idiv
+intcon (4)
+rdiv
+realcon (2.5)
+imod
+intcon (2)
+andsy
+orsy
+notsy
+ident (x)

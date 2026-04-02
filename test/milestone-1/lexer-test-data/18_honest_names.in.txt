@@ -1,0 +1,8 @@
+program HonestVariableNames;
+var
+    itWorksOnMyMachine, probablyFine, shipIt: integer;
+begin
+    probablyFine := 0;
+    shipIt := probablyFine + 1;
+    itWorksOnMyMachine := shipIt;
+end.

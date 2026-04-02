@@ -1,0 +1,63 @@
+programsy
+ident (FastInvSqrt)
+semicolon
+varsy
+ident (x)
+comma
+ident (y)
+comma
+ident (threehalfs)
+colon
+ident (real)
+semicolon
+beginsy
+ident (x)
+becomes
+realcon (2.25)
+semicolon
+ident (threehalfs)
+becomes
+realcon (1.5)
+semicolon
+ident (y)
+becomes
+ident (x)
+semicolon
+ident (y)
+becomes
+ident (y)
+times
+lparent
+ident (threehalfs)
+minus
+realcon (0.5)
+times
+ident (x)
+times
+ident (y)
+times
+ident (y)
+times
+ident (y)
+rparent
+semicolon
+ident (y)
+becomes
+ident (y)
+times
+lparent
+ident (threehalfs)
+minus
+realcon (0.5)
+times
+ident (x)
+times
+ident (y)
+times
+ident (y)
+times
+ident (y)
+rparent
+semicolon
+endsy
+period

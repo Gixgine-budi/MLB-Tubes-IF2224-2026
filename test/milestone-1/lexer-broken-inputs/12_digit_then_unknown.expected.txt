@@ -1,0 +1,4 @@
+intcon (42)
+unknown($)
+intcon (7)
+semicolon

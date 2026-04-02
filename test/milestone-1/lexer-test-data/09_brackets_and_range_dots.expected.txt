@@ -1,0 +1,14 @@
+ident (arr)
+lbrack
+intcon (1)
+period
+period
+intcon (10)
+rbrack
+becomes
+lparent
+ident (a)
+comma
+ident (b)
+rparent
+semicolon

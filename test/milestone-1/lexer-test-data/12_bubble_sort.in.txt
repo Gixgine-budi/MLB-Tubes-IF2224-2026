@@ -1,0 +1,22 @@
+program BubbleSort;
+var
+    i, j, t: integer;
+    a: array[1..5] of integer;
+begin
+    i := 1;
+    while i <= 5 do
+    begin
+        j := 1;
+        while j < 5 do
+        begin
+            if a[j] > a[j + 1] then
+            begin
+                t := a[j];
+                a[j] := a[j + 1];
+                a[j + 1] := t;
+            end;
+            j := j + 1;
+        end;
+        i := i + 1;
+    end;
+end.

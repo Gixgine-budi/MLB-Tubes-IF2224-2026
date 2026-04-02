@@ -1,0 +1,8 @@
+program AlmostHalting;
+var
+    busy: integer;
+begin
+    busy := 1;
+    while busy <> 0 do
+        busy := busy + busy;
+end.

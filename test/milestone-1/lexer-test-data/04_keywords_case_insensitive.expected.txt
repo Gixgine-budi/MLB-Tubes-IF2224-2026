@@ -1,0 +1,43 @@
+programsy
+ident (Demo)
+semicolon
+beginsy
+ifsy
+ident (True)
+thensy
+ident (x)
+becomes
+intcon (1)
+semicolon
+whilesy
+ident (y)
+dosy
+ident (z)
+becomes
+intcon (2)
+semicolon
+forsy
+ident (i)
+tosy
+ident (n)
+dosy
+ident (k)
+becomes
+intcon (3)
+semicolon
+casesy
+ident (v)
+ofsy
+ident (w)
+colon
+ident (t)
+semicolon
+endsy
+semicolon
+repeatsy
+ident (u)
+untilsy
+ident (q)
+semicolon
+endsy
+period

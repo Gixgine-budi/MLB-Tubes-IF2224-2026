@@ -1,0 +1,36 @@
+Arion lexer manual test data (Milestone 1 IF2224 TBFO)
+Location: MLB-Tubes-IF2224-2026/test/milestone-1/lexer-test-data
+
+Twenty cases: 01 through 20 (each has a matching .in.txt and .expected.txt).
+
+Each case is a pair:
+  <name>.in.txt       — source input (.txt)
+  <name>.expected.txt — one token per line, per spesifikasi Milestone 1
+
+Token names follow the PDF token table (e.g. programsy, ident (Hello), intcon (5), neq, becomes).
+Comments are assumed to be discarded and do not appear in expected output.
+
+Compare your lexer output (also one token per line) with the .expected.txt file.
+If your implementation emits comment tokens or uses different spelling (e.g. NEQ vs neq), adjust your diff script or these files accordingly.
+
+Files:
+  01_spec_example              — contoh resmi spesifikasi
+  02_operators_arith_logic     — + - * div / MOD AND OR NOT
+  03_relational                — == <> > >= < <=
+  04_keywords_case_insensitive — PROGRAM, bEgIn, IF, …
+  05_literals                  — int, real, charcon, string
+  06_comments_brace_paren_star — { } dan (* *) dihapus dari aliran token
+  07_maximal_munch_and_punct   — := >= <> tanpa spasi
+  08_declaration_keywords      — const/type/var/function/procedure/array/record
+  09_brackets_and_range_dots   — [ ] , .. sebagai dua period
+  10_reserved_prefix_identifiers — diva, andy, … (satu ident, bukan keyword+suffix)
+  11_downto_if_else            — downto, then, else
+  12_bubble_sort               — array, nested while/if, swaps a[j] and a[j+1]
+  13_prime_check               — trial division loop, mod, ==
+  14_newton_sqrt               — real literals, while on |g*g-x|, assignment with parens
+  15_fast_inv_sqrt             — two Newton-style 1/sqrt(x) refinement steps (no bit hack)
+  16_off_by_one                — loop to 10 with a forgiving comment
+  17_schrodinger               — if/else toggles cat (both branches assign)
+  18_honest_names              — long idents: itWorksOnMyMachine, shipIt, …
+  19_copy_paste                — magic 42 + block comment (* … *)
+  20_almost_halting            — while busy <> 0; busy doubles forever (in the story)

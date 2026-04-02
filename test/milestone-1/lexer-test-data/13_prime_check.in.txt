@@ -1,0 +1,14 @@
+program PrimeCheck;
+var
+    n, i, ok: integer;
+begin
+    n := 17;
+    ok := 1;
+    i := 2;
+    while i * i <= n do
+    begin
+        if n mod i == 0 then
+            ok := 0;
+        i := i + 1;
+    end;
+end.

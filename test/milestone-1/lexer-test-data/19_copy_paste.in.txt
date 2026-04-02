@@ -1,0 +1,6 @@
+program CopyPasteFromWeb;
+var
+    magicNumber: integer;
+begin
+    magicNumber := 42; (* works in prod, do not touch *)
+end.

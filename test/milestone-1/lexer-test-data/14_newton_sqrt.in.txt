@@ -1,0 +1,12 @@
+program NewtonSqrt;
+var
+    x, g, eps: real;
+begin
+    x := 2.0;
+    g := 1.0;
+    eps := 0.0001;
+    while g * g - x > eps do
+    begin
+        g := (g + x / g) / 2.0;
+    end;
+end.

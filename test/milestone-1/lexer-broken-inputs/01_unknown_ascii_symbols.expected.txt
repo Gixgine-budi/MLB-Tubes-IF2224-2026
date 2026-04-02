@@ -1,0 +1,10 @@
+ident (x)
+becomes
+intcon (1)
+semicolon
+unknown($)
+unknown(@)
+unknown(#)
+unknown(~)
+unknown(`)
+unknown(^)

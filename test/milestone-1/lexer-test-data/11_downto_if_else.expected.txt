@@ -1,0 +1,22 @@
+programsy
+ident (P)
+semicolon
+beginsy
+forsy
+ident (i)
+downtosy
+ident (j)
+dosy
+ident (k)
+becomes
+intcon (0)
+semicolon
+ifsy
+ident (p)
+thensy
+ident (q)
+elsesy
+ident (r)
+semicolon
+endsy
+period

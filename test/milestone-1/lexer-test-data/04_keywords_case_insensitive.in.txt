@@ -1,0 +1,8 @@
+PROGRAM Demo;
+bEgIn
+IF True THEN x := 1;
+WHILE y DO z := 2;
+FOR i TO n DO k := 3;
+CASE v OF w: t; END;
+REPEAT u UNTIL q;
+END.

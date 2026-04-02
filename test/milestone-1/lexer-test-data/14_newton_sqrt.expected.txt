@@ -1,0 +1,51 @@
+programsy
+ident (NewtonSqrt)
+semicolon
+varsy
+ident (x)
+comma
+ident (g)
+comma
+ident (eps)
+colon
+ident (real)
+semicolon
+beginsy
+ident (x)
+becomes
+realcon (2.0)
+semicolon
+ident (g)
+becomes
+realcon (1.0)
+semicolon
+ident (eps)
+becomes
+realcon (0.0001)
+semicolon
+whilesy
+ident (g)
+times
+ident (g)
+minus
+ident (x)
+gtr
+ident (eps)
+dosy
+beginsy
+ident (g)
+becomes
+lparent
+ident (g)
+plus
+ident (x)
+rdiv
+ident (g)
+rparent
+rdiv
+realcon (2.0)
+semicolon
+endsy
+semicolon
+endsy
+period

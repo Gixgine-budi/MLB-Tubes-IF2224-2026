@@ -1,0 +1,18 @@
+ident (x)
+becomes
+intcon (1)
+semicolon
+ident (y)
+becomes
+lparent
+ident (a)
+geq
+ident (b)
+rparent
+andsy
+lparent
+ident (c)
+neq
+ident (d)
+rparent
+semicolon

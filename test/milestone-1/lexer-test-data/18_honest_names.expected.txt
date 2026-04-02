@@ -1,0 +1,29 @@
+programsy
+ident (HonestVariableNames)
+semicolon
+varsy
+ident (itWorksOnMyMachine)
+comma
+ident (probablyFine)
+comma
+ident (shipIt)
+colon
+ident (integer)
+semicolon
+beginsy
+ident (probablyFine)
+becomes
+intcon (0)
+semicolon
+ident (shipIt)
+becomes
+ident (probablyFine)
+plus
+intcon (1)
+semicolon
+ident (itWorksOnMyMachine)
+becomes
+ident (shipIt)
+semicolon
+endsy
+period

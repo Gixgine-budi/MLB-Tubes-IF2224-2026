@@ -1,0 +1,3 @@
+ident (ok)
+semicolon
+unknown((* star comment not closed)

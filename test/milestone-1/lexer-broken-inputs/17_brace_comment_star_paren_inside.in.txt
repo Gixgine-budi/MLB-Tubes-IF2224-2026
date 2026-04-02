@@ -1,0 +1,1 @@
+a; { this is brace style *) still comment until brace closes } b;

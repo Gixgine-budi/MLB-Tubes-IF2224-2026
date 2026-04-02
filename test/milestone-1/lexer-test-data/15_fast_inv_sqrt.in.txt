@@ -1,0 +1,10 @@
+program FastInvSqrt;
+var
+    x, y, threehalfs: real;
+begin
+    x := 2.25;
+    threehalfs := 1.5;
+    y := x;
+    y := y * (threehalfs - 0.5 * x * y * y * y);
+    y := y * (threehalfs - 0.5 * x * y * y * y);
+end.

@@ -1,0 +1,1 @@
+a; (* this is paren-star style } still comment until star-paren closes *) b;

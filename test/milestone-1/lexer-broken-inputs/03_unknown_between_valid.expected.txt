@@ -1,0 +1,8 @@
+beginsy
+ident (foo)
+unknown($)
+ident (bar)
+unknown(#)
+ident (baz)
+endsy
+period

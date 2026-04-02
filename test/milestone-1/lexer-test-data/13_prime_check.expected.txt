@@ -1,0 +1,54 @@
+programsy
+ident (PrimeCheck)
+semicolon
+varsy
+ident (n)
+comma
+ident (i)
+comma
+ident (ok)
+colon
+ident (integer)
+semicolon
+beginsy
+ident (n)
+becomes
+intcon (17)
+semicolon
+ident (ok)
+becomes
+intcon (1)
+semicolon
+ident (i)
+becomes
+intcon (2)
+semicolon
+whilesy
+ident (i)
+times
+ident (i)
+leq
+ident (n)
+dosy
+beginsy
+ifsy
+ident (n)
+imod
+ident (i)
+eql
+intcon (0)
+thensy
+ident (ok)
+becomes
+intcon (0)
+semicolon
+ident (i)
+becomes
+ident (i)
+plus
+intcon (1)
+semicolon
+endsy
+semicolon
+endsy
+period

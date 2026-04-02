@@ -1,0 +1,7 @@
+ident (x)
+becomes
+unknown('no closing quote)
+ident (y)
+becomes
+intcon (2)
+semicolon

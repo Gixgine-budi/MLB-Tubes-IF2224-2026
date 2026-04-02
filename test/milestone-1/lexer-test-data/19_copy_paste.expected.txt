@@ -1,0 +1,15 @@
+programsy
+ident (CopyPasteFromWeb)
+semicolon
+varsy
+ident (magicNumber)
+colon
+ident (integer)
+semicolon
+beginsy
+ident (magicNumber)
+becomes
+intcon (42)
+semicolon
+endsy
+period

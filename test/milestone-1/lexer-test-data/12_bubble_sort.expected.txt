@@ -1,0 +1,107 @@
+programsy
+ident (BubbleSort)
+semicolon
+varsy
+ident (i)
+comma
+ident (j)
+comma
+ident (t)
+colon
+ident (integer)
+semicolon
+ident (a)
+colon
+arraysy
+lbrack
+intcon (1)
+period
+period
+intcon (5)
+rbrack
+ofsy
+ident (integer)
+semicolon
+beginsy
+ident (i)
+becomes
+intcon (1)
+semicolon
+whilesy
+ident (i)
+leq
+intcon (5)
+dosy
+beginsy
+ident (j)
+becomes
+intcon (1)
+semicolon
+whilesy
+ident (j)
+lss
+intcon (5)
+dosy
+beginsy
+ifsy
+ident (a)
+lbrack
+ident (j)
+rbrack
+gtr
+ident (a)
+lbrack
+ident (j)
+plus
+intcon (1)
+rbrack
+thensy
+beginsy
+ident (t)
+becomes
+ident (a)
+lbrack
+ident (j)
+rbrack
+semicolon
+ident (a)
+lbrack
+ident (j)
+rbrack
+becomes
+ident (a)
+lbrack
+ident (j)
+plus
+intcon (1)
+rbrack
+semicolon
+ident (a)
+lbrack
+ident (j)
+plus
+intcon (1)
+rbrack
+becomes
+ident (t)
+semicolon
+endsy
+semicolon
+ident (j)
+becomes
+ident (j)
+plus
+intcon (1)
+semicolon
+endsy
+semicolon
+ident (i)
+becomes
+ident (i)
+plus
+intcon (1)
+semicolon
+endsy
+semicolon
+endsy
+period

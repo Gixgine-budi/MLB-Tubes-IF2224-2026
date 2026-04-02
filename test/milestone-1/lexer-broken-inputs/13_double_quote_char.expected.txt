@@ -1,0 +1,6 @@
+ident (a)
+becomes
+unknown(")
+ident (oops)
+unknown(")
+semicolon

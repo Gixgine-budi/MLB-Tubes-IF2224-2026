@@ -1,0 +1,5 @@
+program P;
+begin
+for i downto j do k := 0;
+if p then q else r;
+end.

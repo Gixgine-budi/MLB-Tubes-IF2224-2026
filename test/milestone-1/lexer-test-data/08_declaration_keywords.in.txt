@@ -1,0 +1,9 @@
+program P;
+const c: integer;
+type T: Char;
+var v: String;
+function F;
+procedure G;
+array A;
+record R;
+begin end.

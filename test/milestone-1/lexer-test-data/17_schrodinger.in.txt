@@ -1,0 +1,10 @@
+program Schrodinger;
+var
+    cat: integer;
+begin
+    cat := 1;
+    if cat == 1 then
+        cat := 0
+    else
+        cat := 1;
+end.

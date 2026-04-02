@@ -1,0 +1,3 @@
+{ line comment to } program P;
+(* star paren
+   multiline *) var x: integer;

@@ -1,0 +1,5 @@
+ident (a)
+colon
+unknown(=)
+intcon (1)
+semicolon

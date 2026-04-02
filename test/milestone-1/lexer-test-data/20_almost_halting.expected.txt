@@ -1,0 +1,26 @@
+programsy
+ident (AlmostHalting)
+semicolon
+varsy
+ident (busy)
+colon
+ident (integer)
+semicolon
+beginsy
+ident (busy)
+becomes
+intcon (1)
+semicolon
+whilesy
+ident (busy)
+neq
+intcon (0)
+dosy
+ident (busy)
+becomes
+ident (busy)
+plus
+ident (busy)
+semicolon
+endsy
+period

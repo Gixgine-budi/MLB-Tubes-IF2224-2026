@@ -1,0 +1,3 @@
+ident (x)
+semicolon
+unknown((* opened with paren-star, } does not close this)
