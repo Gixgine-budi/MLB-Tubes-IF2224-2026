@@ -42,7 +42,7 @@ class Lexer::State {
 
   bool transition();
 
-  bool consumed() const { return buffer_.consumed; };
+  bool is_done() const;
 
  private:
   StateName name_ = StateName::START;
@@ -51,6 +51,7 @@ class Lexer::State {
 
   std::array<std::function<StateOrToken(char)>, 20> lookup_;
 
+  void consume(char c);
   StateOrToken parse_symbol(char c);
   StateOrToken parse_keyword();
 };

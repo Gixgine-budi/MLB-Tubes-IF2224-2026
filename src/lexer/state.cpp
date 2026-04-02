@@ -7,61 +7,61 @@
 StateOrToken Lexer::State::parse_symbol(char c) {
   switch (c) {
     case '+':
-      buffer_.consume('+');
+      consume('+');
       return TokenType::PLUS;
     case '-':
-      buffer_.consume('-');
+      consume('-');
       return StateName::IN_MINUS;
     case '*':
-      buffer_.consume('*');
+      consume('*');
       return TokenType::TIMES;
     case '/':
-      buffer_.consume('/');
+      consume('/');
       return TokenType::RDIV;
     case '=':
-      buffer_.consume('=');
+      consume('=');
       return StateName::IN_EQUAL;
     case '<':
-      buffer_.consume('<');
+      consume('<');
       return StateName::IN_LESS;
     case '>':
-      buffer_.consume('>');
+      consume('>');
       return StateName::IN_GREATER;
     case '(':
-      buffer_.consume('(');
+      consume('(');
       return StateName::IN_PARENT;
     case ')':
-      buffer_.consume(')');
+      consume(')');
       return TokenType::RPARENT;
     case '[':
-      buffer_.consume('[');
+      consume('[');
       return TokenType::LBRACK;
     case ']':
-      buffer_.consume(']');
+      consume(']');
       return TokenType::RBRACK;
     case '{':
-      buffer_.consume('{');
+      consume('{');
       return StateName::IN_CURLY;
     case '}':
-      buffer_.consume('}');
+      consume('}');
       return TokenType::INVALID;
     case '.':
-      buffer_.consume('.');
+      consume('.');
       return TokenType::PERIOD;
     case ',':
-      buffer_.consume(',');
+      consume(',');
       return TokenType::COMMA;
     case ';':
-      buffer_.consume(';');
+      consume(';');
       return TokenType::SEMICOLON;
     case ':':
-      buffer_.consume(':');
+      consume(':');
       return StateName::IN_COLON;
     case '\'':
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::IN_QUOTE;
     default:
-      buffer_.consume(c);
+      consume(c);
       return TokenType::INVALID;
   };
 }
@@ -101,7 +101,7 @@ StateOrToken Lexer::State::parse_keyword() {
 Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
   auto start = [this](char c) -> StateOrToken {
     if (Alphabet::is_whitespace(c)) {
-      buffer_.consumed = true;
+      lexer_.reader_.advance();
       return name_;
     }
 
@@ -109,80 +109,80 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
     buffer_.col_num = lexer_.reader_.col_num();
 
     if (Alphabet::is_letter(c)) {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_IDENT;
     }
 
     if (Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_INTCON;
     }
 
     if (Alphabet::is_symbol(c)) return parse_symbol(c);
 
-    buffer_.consume(c);
+    consume(c);
     return TokenType::INVALID;
   };
 
   auto in_quote = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::IN_QUOTE_CHARCON;
     } else if (c == '\n') {
-      buffer_.consume('\n');
+      consume('\n');
       return TokenType::INVALID;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_CHARCON;
     }
   };
 
   auto in_quote_charcon = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::IN_CHARCON;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return TokenType::INVALID;
     }
   };
 
   auto in_charcon = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::END_CHARCON;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_STRING;
     }
   };
 
   auto end_charcon = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::IN_CHARCON;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return TokenType::INVALID;
     }
   };
 
   auto in_string = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::END_STRING;
     } else if (c == '\n') {
-      buffer_.consume('\n');
+      consume('\n');
       return TokenType::INVALID;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     }
   };
 
   auto end_string = [this](char c) -> StateOrToken {
     if (c == '\'') {
-      buffer_.consume('\'');
+      consume('\'');
       return StateName::IN_STRING;
     } else {
       return TokenType::STRING;
@@ -191,17 +191,17 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_curly = [this](char c) -> StateOrToken {
     if (c == '}') {
-      buffer_.consume('}');
+      consume('}');
       return TokenType::COMMENT;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     }
   };
 
   auto in_parent = [this](char c) -> StateOrToken {
     if (c == '*') {
-      buffer_.consume('*');
+      consume('*');
       return StateName::IN_COMMENT_PARENT;
     } else {
       return TokenType::LPARENT;
@@ -210,27 +210,27 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_comment_parent = [this](char c) -> StateOrToken {
     if (c == '*') {
-      buffer_.consume('*');
+      consume('*');
       return StateName::END_COMMENT_PARENT;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     }
   };
 
   auto end_comment_parent = [this](char c) -> StateOrToken {
     if (c == ')') {
-      buffer_.consume(')');
+      consume(')');
       return TokenType::COMMENT;
     } else {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     }
   };
 
   auto in_minus = [this](char c) -> StateOrToken {
     if (Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_INTCON;
     } else {
       return TokenType::MINUS;
@@ -239,10 +239,10 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_intcon = [this](char c) -> StateOrToken {
     if (Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     } else if (c == '.') {
-      buffer_.consume('.');
+      consume('.');
       return StateName::IN_PERIOD_INTCON;
     } else {
       return TokenType::INTCON;
@@ -251,7 +251,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_period_intcon = [this](char c) -> StateOrToken {
     if (Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return StateName::IN_REALCON;
     } else {
       // TODO: ALSO RETURN THE PERIOD AS A SEPARATE TOKEN
@@ -261,7 +261,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_realcon = [this](char c) -> StateOrToken {
     if (Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     } else {
       return TokenType::REALCON;
@@ -270,10 +270,10 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_less = [this](char c) -> StateOrToken {
     if (c == '=') {
-      buffer_.consume('=');
+      consume('=');
       return TokenType::LEQ;
     } else if (c == '>') {
-      buffer_.consume('>');
+      consume('>');
       return TokenType::NEQ;
     } else {
       return TokenType::LSS;
@@ -282,7 +282,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_equal = [this](char c) -> StateOrToken {
     if (c == '=') {
-      buffer_.consume('=');
+      consume('=');
       return TokenType::EQL;
     } else {
       return TokenType::INVALID;
@@ -291,7 +291,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_greater = [this](char c) -> StateOrToken {
     if (c == '=') {
-      buffer_.consume('=');
+      consume('=');
       return TokenType::GEQ;
     } else {
       return TokenType::GTR;
@@ -300,7 +300,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_colon = [this](char c) -> StateOrToken {
     if (c == '=') {
-      buffer_.consume('=');
+      consume('=');
       return TokenType::BECOMES;
     } else {
       return TokenType::COLON;
@@ -309,7 +309,7 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 
   auto in_ident = [this](char c) -> StateOrToken {
     if (Alphabet::is_letter(c) || Alphabet::is_digit(c)) {
-      buffer_.consume(c);
+      consume(c);
       return name_;
     } else {
       return parse_keyword();
@@ -338,10 +338,18 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
   lookup_[static_cast<int>(StateName::IN_IDENT)] = in_ident;
 }
 
+void Lexer::State::consume(char c) {
+  buffer_.lexeme.append(1, c);
+  lexer_.reader_.advance();
+}
+
+bool Lexer::State::is_done() const {
+  return lexer_.reader_.current() == '\0' && name_ == StateName::START;
+}
+
 bool Lexer::State::transition() {
-  buffer_.consumed = false;
   char c = lexer_.reader_.current();
-  if (c == '\0') return false;
+  if (c == '\0' && name_ == StateName::START) return false;
 
   StateOrToken next = lookup_[static_cast<int>(name_)](c);
 
@@ -351,10 +359,8 @@ bool Lexer::State::transition() {
   } else if (std::holds_alternative<TokenType>(next)) {
     TokenType type = std::get<TokenType>(next);
     buffer_.type = type;
-    bool consumed = buffer_.consumed;
     lexer_.tokens_.push_back(buffer_);
     buffer_ = Token();
-    buffer_.consumed = consumed;
     name_ = StateName::START;
     return true;
   } else

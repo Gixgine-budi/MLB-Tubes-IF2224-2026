@@ -73,7 +73,6 @@ struct Token {
   std::string lexeme;
   int line_num;
   int col_num;
-  bool consumed = false;
 
   /**
    * @brief Print token in format "type(lexeme)" or "type"
@@ -83,11 +82,6 @@ struct Token {
    * @return std::ostream&
    */
   friend std::ostream& operator<<(std::ostream& os, const Token& t);
-
-  void consume(char c) {
-    lexeme.append(std::string(1, c));
-    consumed = true;
-  }
 
   bool is_empty() const { return lexeme.empty(); }
 };
