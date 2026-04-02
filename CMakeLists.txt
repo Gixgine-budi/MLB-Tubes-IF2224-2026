@@ -8,7 +8,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(arion_lexer
   src/lexer/char_machine.cpp
-  src/lexer/dfa_graph.cpp)
+  src/lexer/lexer.cpp
+  src/lexer/token.cpp
+  src/lexer/state.cpp
+  src/lexer/alphabet.cpp
+  )
 
 target_include_directories(arion_lexer PUBLIC src/lexer)
 
