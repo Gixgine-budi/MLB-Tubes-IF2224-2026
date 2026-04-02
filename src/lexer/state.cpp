@@ -67,7 +67,7 @@ StateOrToken Lexer::State::parse_symbol(char c) {
 }
 
 StateOrToken Lexer::State::parse_keyword() {
-  std::string& buf = buffer_.lexeme;
+  std::string buf = Alphabet::to_lower(buffer_.lexeme);
   if (buf == "and") return TokenType::ANDSY;
   if (buf == "array") return TokenType::ARRAYSY;
   if (buf == "begin") return TokenType::BEGINSY;
@@ -100,7 +100,10 @@ StateOrToken Lexer::State::parse_keyword() {
 
 Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
   auto start = [this](char c) -> StateOrToken {
-    if (Alphabet::is_whitespace(c)) return name_;
+    if (Alphabet::is_whitespace(c)) {
+      buffer_.consumed = true;
+      return name_;
+    }
 
     buffer_.line_num = lexer_.reader_.line_num();
     buffer_.col_num = lexer_.reader_.col_num();
@@ -173,17 +176,16 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
       return TokenType::INVALID;
     } else {
       buffer_.consume(c);
-      return StateName::IN_CHARCON;
+      return name_;
     }
   };
 
   auto end_string = [this](char c) -> StateOrToken {
     if (c == '\'') {
       buffer_.consume('\'');
-      return TokenType::STRING;
+      return StateName::IN_STRING;
     } else {
-      buffer_.consume(c);
-      return TokenType::INVALID;
+      return TokenType::STRING;
     }
   };
 
@@ -339,6 +341,8 @@ Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
 bool Lexer::State::transition() {
   buffer_.consumed = false;
   char c = lexer_.reader_.current();
+  if (c == '\0') return false;
+
   StateOrToken next = lookup_[static_cast<int>(name_)](c);
 
   if (std::holds_alternative<StateName>(next)) {
@@ -347,10 +351,12 @@ bool Lexer::State::transition() {
   } else if (std::holds_alternative<TokenType>(next)) {
     TokenType type = std::get<TokenType>(next);
     buffer_.type = type;
+    bool consumed = buffer_.consumed;
     lexer_.tokens_.push_back(buffer_);
     buffer_ = Token();
+    buffer_.consumed = consumed;
     name_ = StateName::START;
-    consumed_ = true;
     return true;
-  }
+  } else
+    return false;
 }

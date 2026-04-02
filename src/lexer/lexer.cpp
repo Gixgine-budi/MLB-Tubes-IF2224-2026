@@ -17,7 +17,10 @@ bool Lexer::read() {
     }
   }
 
-  return reader_.advance();
+  if (current_->consumed()) {
+    return reader_.advance();
+  } else
+    return true;
 }
 
 void Lexer::run() { while (read()); }

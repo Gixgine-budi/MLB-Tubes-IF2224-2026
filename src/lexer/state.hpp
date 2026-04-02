@@ -42,13 +42,12 @@ class Lexer::State {
 
   bool transition();
 
-  bool consumed() const { return consumed_; };
+  bool consumed() const { return buffer_.consumed; };
 
  private:
   StateName name_ = StateName::START;
   Token buffer_;
   Lexer& lexer_;
-  bool consumed_ = false;
 
   std::array<std::function<StateOrToken(char)>, 20> lookup_;
 

@@ -17,7 +17,7 @@ CharMachine::~CharMachine() {
 }
 
 bool CharMachine::advance() {
-  if (stream_.is_open()) throw std::runtime_error("Stream is not open");
+  if (!stream_.is_open()) throw std::runtime_error("Stream is not open");
   if (eof()) {
     current_ = '\0';
     return false;
