@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "char_machine.hpp"
+#include "state.hpp"
 #include "token.hpp"
 
 class Lexer {
@@ -12,17 +13,21 @@ class Lexer {
   /**
    * @brief Read characters from the input and emit tokens until the end of
    * input is reached.
-   *
-   *
    */
   void read();
 
   auto tokens() const { return tokens_; }
 
-  class State;  ///< Forward declaration of class State
-
  private:
   CharMachine& reader_;        ///< Character reader
   std::vector<Token> tokens_;  ///< List of tokens emitted by the lexer
-  State* current_;             ///< Current state of the lexer
+  
+  State current_ = State::START;
+  Token buffer_;
+
+  bool transition();
+  bool is_done() const;
+  void consume(char c);
+  StateOrToken parse_symbol(char c);
+  StateOrToken parse_keyword();
 };

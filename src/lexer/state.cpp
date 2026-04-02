@@ -2,16 +2,15 @@
 
 #include "alphabet.hpp"
 #include "lexer.hpp"
-#include "token.hpp"
 
-StateOrToken Lexer::State::parse_symbol(char c) {
+StateOrToken Lexer::parse_symbol(char c) {
   switch (c) {
     case '+':
       consume('+');
       return TokenType::PLUS;
     case '-':
       consume('-');
-      return StateName::IN_MINUS;
+      return State::IN_MINUS;
     case '*':
       consume('*');
       return TokenType::TIMES;
@@ -20,16 +19,16 @@ StateOrToken Lexer::State::parse_symbol(char c) {
       return TokenType::RDIV;
     case '=':
       consume('=');
-      return StateName::IN_EQUAL;
+      return State::IN_EQUAL;
     case '<':
       consume('<');
-      return StateName::IN_LESS;
+      return State::IN_LESS;
     case '>':
       consume('>');
-      return StateName::IN_GREATER;
+      return State::IN_GREATER;
     case '(':
       consume('(');
-      return StateName::IN_PARENT;
+      return State::IN_PARENT;
     case ')':
       consume(')');
       return TokenType::RPARENT;
@@ -41,7 +40,7 @@ StateOrToken Lexer::State::parse_symbol(char c) {
       return TokenType::RBRACK;
     case '{':
       consume('{');
-      return StateName::IN_CURLY;
+      return State::IN_CURLY;
     case '}':
       consume('}');
       return TokenType::INVALID;
@@ -56,17 +55,17 @@ StateOrToken Lexer::State::parse_symbol(char c) {
       return TokenType::SEMICOLON;
     case ':':
       consume(':');
-      return StateName::IN_COLON;
+      return State::IN_COLON;
     case '\'':
       consume('\'');
-      return StateName::IN_QUOTE;
+      return State::IN_QUOTE;
     default:
       consume(c);
       return TokenType::INVALID;
   };
 }
 
-StateOrToken Lexer::State::parse_keyword() {
+StateOrToken Lexer::parse_keyword() {
   std::string buf = Alphabet::to_lower(buffer_.lexeme);
   if (buf == "and") return TokenType::ANDSY;
   if (buf == "array") return TokenType::ARRAYSY;
@@ -98,271 +97,234 @@ StateOrToken Lexer::State::parse_keyword() {
   return TokenType::IDENT;
 }
 
-Lexer::State::State(StateName name, Lexer& lexer) : name_(name), lexer_(lexer) {
-  auto start = [this](char c) -> StateOrToken {
-    if (Alphabet::is_whitespace(c)) {
-      lexer_.reader_.advance();
-      return name_;
-    }
-
-    buffer_.line_num = lexer_.reader_.line_num();
-    buffer_.col_num = lexer_.reader_.col_num();
-
-    if (Alphabet::is_letter(c)) {
-      consume(c);
-      return StateName::IN_IDENT;
-    }
-
-    if (Alphabet::is_digit(c)) {
-      consume(c);
-      return StateName::IN_INTCON;
-    }
-
-    if (Alphabet::is_symbol(c)) return parse_symbol(c);
-
-    consume(c);
-    return TokenType::INVALID;
-  };
-
-  auto in_quote = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::IN_QUOTE_CHARCON;
-    } else if (c == '\n') {
-      consume('\n');
-      return TokenType::INVALID;
-    } else {
-      consume(c);
-      return StateName::IN_CHARCON;
-    }
-  };
-
-  auto in_quote_charcon = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::IN_CHARCON;
-    } else {
-      consume(c);
-      return TokenType::INVALID;
-    }
-  };
-
-  auto in_charcon = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::END_CHARCON;
-    } else {
-      consume(c);
-      return StateName::IN_STRING;
-    }
-  };
-
-  auto end_charcon = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::IN_CHARCON;
-    } else {
-      consume(c);
-      return TokenType::INVALID;
-    }
-  };
-
-  auto in_string = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::END_STRING;
-    } else if (c == '\n') {
-      consume('\n');
-      return TokenType::INVALID;
-    } else {
-      consume(c);
-      return name_;
-    }
-  };
-
-  auto end_string = [this](char c) -> StateOrToken {
-    if (c == '\'') {
-      consume('\'');
-      return StateName::IN_STRING;
-    } else {
-      return TokenType::STRING;
-    }
-  };
-
-  auto in_curly = [this](char c) -> StateOrToken {
-    if (c == '}') {
-      consume('}');
-      return TokenType::COMMENT;
-    } else {
-      consume(c);
-      return name_;
-    }
-  };
-
-  auto in_parent = [this](char c) -> StateOrToken {
-    if (c == '*') {
-      consume('*');
-      return StateName::IN_COMMENT_PARENT;
-    } else {
-      return TokenType::LPARENT;
-    }
-  };
-
-  auto in_comment_parent = [this](char c) -> StateOrToken {
-    if (c == '*') {
-      consume('*');
-      return StateName::END_COMMENT_PARENT;
-    } else {
-      consume(c);
-      return name_;
-    }
-  };
-
-  auto end_comment_parent = [this](char c) -> StateOrToken {
-    if (c == ')') {
-      consume(')');
-      return TokenType::COMMENT;
-    } else {
-      consume(c);
-      return name_;
-    }
-  };
-
-  auto in_minus = [this](char c) -> StateOrToken {
-    if (Alphabet::is_digit(c)) {
-      consume(c);
-      return StateName::IN_INTCON;
-    } else {
-      return TokenType::MINUS;
-    }
-  };
-
-  auto in_intcon = [this](char c) -> StateOrToken {
-    if (Alphabet::is_digit(c)) {
-      consume(c);
-      return name_;
-    } else if (c == '.') {
-      consume('.');
-      return StateName::IN_PERIOD_INTCON;
-    } else {
-      return TokenType::INTCON;
-    }
-  };
-
-  auto in_period_intcon = [this](char c) -> StateOrToken {
-    if (Alphabet::is_digit(c)) {
-      consume(c);
-      return StateName::IN_REALCON;
-    } else {
-      // TODO: ALSO RETURN THE PERIOD AS A SEPARATE TOKEN
-      return TokenType::INTCON;
-    }
-  };
-
-  auto in_realcon = [this](char c) -> StateOrToken {
-    if (Alphabet::is_digit(c)) {
-      consume(c);
-      return name_;
-    } else {
-      return TokenType::REALCON;
-    }
-  };
-
-  auto in_less = [this](char c) -> StateOrToken {
-    if (c == '=') {
-      consume('=');
-      return TokenType::LEQ;
-    } else if (c == '>') {
-      consume('>');
-      return TokenType::NEQ;
-    } else {
-      return TokenType::LSS;
-    }
-  };
-
-  auto in_equal = [this](char c) -> StateOrToken {
-    if (c == '=') {
-      consume('=');
-      return TokenType::EQL;
-    } else {
-      return TokenType::INVALID;
-    }
-  };
-
-  auto in_greater = [this](char c) -> StateOrToken {
-    if (c == '=') {
-      consume('=');
-      return TokenType::GEQ;
-    } else {
-      return TokenType::GTR;
-    }
-  };
-
-  auto in_colon = [this](char c) -> StateOrToken {
-    if (c == '=') {
-      consume('=');
-      return TokenType::BECOMES;
-    } else {
-      return TokenType::COLON;
-    }
-  };
-
-  auto in_ident = [this](char c) -> StateOrToken {
-    if (Alphabet::is_letter(c) || Alphabet::is_digit(c)) {
-      consume(c);
-      return name_;
-    } else {
-      return parse_keyword();
-    }
-  };
-
-  lookup_[static_cast<int>(StateName::START)] = start;
-  lookup_[static_cast<int>(StateName::IN_QUOTE)] = in_quote;
-  lookup_[static_cast<int>(StateName::IN_QUOTE_CHARCON)] = in_quote_charcon;
-  lookup_[static_cast<int>(StateName::IN_CHARCON)] = in_charcon;
-  lookup_[static_cast<int>(StateName::END_CHARCON)] = end_charcon;
-  lookup_[static_cast<int>(StateName::IN_STRING)] = in_string;
-  lookup_[static_cast<int>(StateName::END_STRING)] = end_string;
-  lookup_[static_cast<int>(StateName::IN_CURLY)] = in_curly;
-  lookup_[static_cast<int>(StateName::IN_PARENT)] = in_parent;
-  lookup_[static_cast<int>(StateName::IN_COMMENT_PARENT)] = in_comment_parent;
-  lookup_[static_cast<int>(StateName::END_COMMENT_PARENT)] = end_comment_parent;
-  lookup_[static_cast<int>(StateName::IN_MINUS)] = in_minus;
-  lookup_[static_cast<int>(StateName::IN_INTCON)] = in_intcon;
-  lookup_[static_cast<int>(StateName::IN_PERIOD_INTCON)] = in_period_intcon;
-  lookup_[static_cast<int>(StateName::IN_REALCON)] = in_realcon;
-  lookup_[static_cast<int>(StateName::IN_LESS)] = in_less;
-  lookup_[static_cast<int>(StateName::IN_EQUAL)] = in_equal;
-  lookup_[static_cast<int>(StateName::IN_GREATER)] = in_greater;
-  lookup_[static_cast<int>(StateName::IN_COLON)] = in_colon;
-  lookup_[static_cast<int>(StateName::IN_IDENT)] = in_ident;
-}
-
-void Lexer::State::consume(char c) {
+void Lexer::consume(char c) {
   buffer_.lexeme.append(1, c);
-  lexer_.reader_.advance();
+  reader_.advance();
 }
 
-bool Lexer::State::is_done() const {
-  return lexer_.reader_.current() == '\0' && name_ == StateName::START;
+bool Lexer::is_done() const {
+  return reader_.current() == '\0' && current_ == State::START;
 }
 
-bool Lexer::State::transition() {
-  char c = lexer_.reader_.current();
-  if (c == '\0' && name_ == StateName::START) return false;
+bool Lexer::transition() {
+  char c = reader_.current();
+  if (c == '\0' && current_ == State::START) return false;
 
-  StateOrToken next = lookup_[static_cast<int>(name_)](c);
+  StateOrToken next;
 
-  if (std::holds_alternative<StateName>(next)) {
-    name_ = std::get<StateName>(next);
+  switch (current_) {
+    case State::START: {
+      if (Alphabet::is_whitespace(c)) {
+        reader_.advance();
+        next = State::START;
+        break;
+      }
+
+      buffer_.line_num = reader_.line_num();
+      buffer_.col_num = reader_.col_num();
+
+      if (Alphabet::is_letter(c)) {
+        consume(c);
+        next = State::IN_IDENT;
+      } else if (Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_INTCON;
+      } else if (Alphabet::is_symbol(c)) {
+        next = parse_symbol(c);
+      } else {
+        consume(c);
+        next = TokenType::INVALID;
+      }
+      break;
+    }
+    case State::IN_QUOTE:
+      if (c == '\'') {
+        consume('\'');
+        next = State::IN_QUOTE_CHARCON;
+      } else if (c == '\n') {
+        consume('\n');
+        next = TokenType::INVALID;
+      } else {
+        consume(c);
+        next = State::IN_CHARCON;
+      }
+      break;
+    case State::IN_QUOTE_CHARCON:
+      if (c == '\'') {
+        consume('\'');
+        next = State::IN_CHARCON;
+      } else {
+        consume(c);
+        next = TokenType::INVALID;
+      }
+      break;
+    case State::IN_CHARCON:
+      if (c == '\'') {
+        consume('\'');
+        next = State::END_CHARCON;
+      } else {
+        consume(c);
+        next = State::IN_STRING;
+      }
+      break;
+    case State::END_CHARCON:
+      if (c == '\'') {
+        consume('\'');
+        next = State::IN_CHARCON;
+      } else {
+        consume(c);
+        next = TokenType::INVALID;
+      }
+      break;
+    case State::IN_STRING:
+      if (c == '\'') {
+        consume('\'');
+        next = State::END_STRING;
+      } else if (c == '\n') {
+        consume('\n');
+        next = TokenType::INVALID;
+      } else {
+        consume(c);
+        next = State::IN_STRING;
+      }
+      break;
+    case State::END_STRING:
+      if (c == '\'') {
+        consume('\'');
+        next = State::IN_STRING;
+      } else {
+        next = TokenType::STRING;
+      }
+      break;
+    case State::IN_CURLY:
+      if (c == '}') {
+        consume('}');
+        next = TokenType::COMMENT;
+      } else {
+        consume(c);
+        next = State::IN_CURLY;
+      }
+      break;
+    case State::IN_PARENT:
+      if (c == '*') {
+        consume('*');
+        next = State::IN_COMMENT_PARENT;
+      } else {
+        next = TokenType::LPARENT;
+      }
+      break;
+    case State::IN_COMMENT_PARENT:
+      if (c == '*') {
+        consume('*');
+        next = State::END_COMMENT_PARENT;
+      } else {
+        consume(c);
+        next = State::IN_COMMENT_PARENT;
+      }
+      break;
+    case State::END_COMMENT_PARENT:
+      if (c == ')') {
+        consume(')');
+        next = TokenType::COMMENT;
+      } else {
+        consume(c);
+        next = State::IN_COMMENT_PARENT;
+      }
+      break;
+    case State::IN_MINUS:
+      if (Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_INTCON;
+      } else {
+        next = TokenType::MINUS;
+      }
+      break;
+    case State::IN_INTCON:
+      if (Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_INTCON;
+      } else if (c == '.') {
+        consume('.');
+        next = State::IN_PERIOD_INTCON;
+      } else {
+        next = TokenType::INTCON;
+      }
+      break;
+    case State::IN_PERIOD_INTCON:
+      if (Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_REALCON;
+      } else {
+        next = TokenType::INTCON;
+      }
+      break;
+    case State::IN_REALCON:
+      if (Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_REALCON;
+      } else {
+        next = TokenType::REALCON;
+      }
+      break;
+    case State::IN_LESS:
+      if (c == '=') {
+        consume('=');
+        next = TokenType::LEQ;
+      } else if (c == '>') {
+        consume('>');
+        next = TokenType::NEQ;
+      } else {
+        next = TokenType::LSS;
+      }
+      break;
+    case State::IN_EQUAL:
+      if (c == '=') {
+        consume('=');
+        next = TokenType::EQL;
+      } else {
+        next = TokenType::INVALID;
+      }
+      break;
+    case State::IN_GREATER:
+      if (c == '=') {
+        consume('=');
+        next = TokenType::GEQ;
+      } else {
+        next = TokenType::GTR;
+      }
+      break;
+    case State::IN_COLON:
+      if (c == '=') {
+        consume('=');
+        next = TokenType::BECOMES;
+      } else {
+        next = TokenType::COLON;
+      }
+      break;
+    case State::IN_IDENT:
+      if (Alphabet::is_letter(c) || Alphabet::is_digit(c)) {
+        consume(c);
+        next = State::IN_IDENT;
+      } else {
+        next = parse_keyword();
+      }
+      break;
+    default:
+      next = TokenType::INVALID;
+      break;
+  }
+
+  if (std::holds_alternative<State>(next)) {
+    current_ = std::get<State>(next);
     return false;
   } else if (std::holds_alternative<TokenType>(next)) {
     TokenType type = std::get<TokenType>(next);
     buffer_.type = type;
-    lexer_.tokens_.push_back(buffer_);
+    tokens_.push_back(buffer_);
     buffer_ = Token();
-    name_ = StateName::START;
+    current_ = State::START;
     return true;
-  } else
-    return false;
+  }
+
+  return false;
 }

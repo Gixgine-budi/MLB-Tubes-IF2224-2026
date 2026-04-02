@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   try {
     CharMachine reader(filepath);
     Lexer lexer(reader);
-    lexer.run();
+    lexer.read();
 
     std::cout << "Lexical analysis completed successfully.\n";
     std::cout << "Read " << reader.line_num() << " lines. and "
