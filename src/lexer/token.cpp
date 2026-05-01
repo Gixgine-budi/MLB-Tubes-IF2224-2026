@@ -166,3 +166,45 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
   }
   return os;
 }
+
+const std::string Token::error_message() const {
+  switch (invalid_type) {
+    case InvalidType::NOT_INVALID:
+      return "";
+    case InvalidType::ILLEGAL_SYMBOL:
+      return std::string("found illegal symbol \'").append(lexeme).append("\'");
+    case InvalidType::MISSING_QUOTE:
+      return std::string("missing closing quote \' at\n")
+          .append(std::to_string(line_num))
+          .append("\t | ... ")
+          .append(lexeme)
+          .append(" ...");
+    case InvalidType::MISSING_CURLY:
+      return std::string("missing closing } for comment at\n")
+          .append(std::to_string(line_num))
+          .append("\t | ... ")
+          .append(lexeme)
+          .append(" ...");
+    case InvalidType::MISSING_PARENT:
+      return std::string(" incomplete closing, missing ) for comment at\n")
+          .append(std::to_string(line_num))
+          .append("\t | ... ")
+          .append(lexeme)
+          .append(" ...");
+    case InvalidType::MISSING_ASTERIK:
+      return std::string("missing closing *) for comment for at\n")
+          .append(std::to_string(line_num))
+          .append("\t | ... ")
+          .append(lexeme)
+          .append(" ...");
+    case InvalidType::INVALID_COMBINATION:
+      return std::string("invalid symbol combination \'")
+          .append(lexeme)
+          .append("\'");
+    case InvalidType::UNEXCPECTED_SYMBOL:
+      return std::string("found unexpected symbol \'")
+          .append(lexeme)
+          .append("\'");
+  }
+  return "";
+}
