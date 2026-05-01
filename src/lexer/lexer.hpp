@@ -54,7 +54,24 @@ class Lexer {
   bool transition();
 
   /**
-   * @brief Check if the reader has reached the end of input and current sate is
+   * @brief Handle edge case for states when reached EOF. Basically emit the
+   * last token that remains in buffer and handle states with open/closing (e.g.
+   * quote/string, comments)
+   *
+   * @return almost always returns true unless the current is a start state
+   */
+  bool handle_eof();
+
+  /**
+   * @brief Handle edge case to emit two tokens after accepting period after an
+   * intcon (pre realcon) but the next character isn't a digit.
+   *
+   * @return true (emit two tokens)
+   */
+  bool handle_in_period_intcon();
+
+  /**
+   * @brief Check if the reader has reached eof and current sate is
    * at START state as the stop condition for the lexer.
    *
    * @return true

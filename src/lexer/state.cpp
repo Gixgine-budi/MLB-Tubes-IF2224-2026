@@ -2,6 +2,7 @@
 
 #include "alphabet.hpp"
 #include "lexer.hpp"
+#include "token.hpp"
 
 StateOrToken Lexer::parse_symbol(char c) {
   switch (c) {
@@ -103,7 +104,131 @@ void Lexer::consume(char c) {
 }
 
 bool Lexer::is_done() const {
-  return reader_.current() == '\0' && current_ == State::START;
+  return reader_.eof() && current_ == State::START;
+}
+
+bool Lexer::handle_eof() {
+  switch (current_) {
+    case State::START:
+      return false;
+
+    case State::IN_QUOTE:
+    case State::IN_CHARCON:
+    case State::IN_STRING:
+      buffer_.invalid_type = InvalidType::MISSING_QUOTE;
+      buffer_.type = TokenType::INVALID;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_QUOTE_CHARCON:
+    case State::END_STRING:
+      buffer_.type = TokenType::STRING;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::END_CHARCON:
+      buffer_.type = TokenType::CHARCON;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_CURLY:
+      buffer_.invalid_type = InvalidType::MISSING_CURLY;
+      buffer_.type = TokenType::INVALID;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_PARENT:
+      buffer_.type = TokenType::LPARENT;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_COMMENT_PARENT:
+      buffer_.invalid_type = InvalidType::MISSING_ASTERIK;
+      buffer_.type = TokenType::INVALID;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::END_COMMENT_PARENT:
+      buffer_.invalid_type = InvalidType::MISSING_PARENT;
+      buffer_.type = TokenType::INVALID;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_MINUS:
+      buffer_.type = TokenType::MINUS;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_INTCON:
+      buffer_.type = TokenType::INTCON;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_PERIOD_INTCON:
+      return handle_in_period_intcon();
+
+    case State::IN_REALCON:
+      buffer_.type = TokenType::REALCON;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_LESS:
+      buffer_.type = TokenType::LSS;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_EQUAL:
+      buffer_.invalid_type = InvalidType::INVALID_COMBINATION;
+      buffer_.type = TokenType::INVALID;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_GREATER:
+      buffer_.type = TokenType::GTR;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_COLON:
+      buffer_.type = TokenType::COLON;
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+
+    case State::IN_IDENT:
+      buffer_.type = parse_keyword();
+      tokens_.emplace_back(buffer_);
+      buffer_ = Token();
+      current_ = State::START;
+      return true;
+  }
+  return false;
 }
 
 bool Lexer::transition() {
@@ -328,4 +453,23 @@ bool Lexer::transition() {
   }
 
   return false;
+}
+
+bool Lexer::handle_in_period_intcon() {
+  buffer_.lexeme.pop_back();
+  buffer_.type = TokenType::INTCON;
+  tokens_.emplace_back(buffer_);
+
+  int line = reader_.line_num();
+  int col = reader_.col_num();
+  if (col == 1) {
+    col = buffer_.col_num + buffer_.lexeme.length();
+    line--;
+  }
+  tokens_.emplace_back(
+      Token{TokenType::PERIOD, InvalidType::NOT_INVALID, "", line, col});
+
+  buffer_ = Token();
+  current_ = State::START;
+  return true;
 }
