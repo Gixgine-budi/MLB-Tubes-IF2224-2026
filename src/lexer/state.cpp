@@ -4,7 +4,7 @@
 #include "lexer.hpp"
 #include "token.hpp"
 
-StateOrToken Lexer::parse_symbol(char c, InvalidType& isInvalid) {
+StateOrToken Lexer::parse_symbol(char c, InvalidType& invalid) {
   switch (c) {
     case '+':
       consume('+');
@@ -44,6 +44,7 @@ StateOrToken Lexer::parse_symbol(char c, InvalidType& isInvalid) {
       return State::IN_CURLY;
     case '}':
       consume('}');
+      invalid = InvalidType::UNEXCPECTED_SYMBOL;
       return TokenType::INVALID;
     case '.':
       consume('.');
@@ -62,7 +63,7 @@ StateOrToken Lexer::parse_symbol(char c, InvalidType& isInvalid) {
       return State::IN_QUOTE;
     default:
       consume(c);
-      isInvalid = InvalidType::ILLEGAL_SYMBOL;
+      invalid = InvalidType::ILLEGAL_SYMBOL;
       return TokenType::INVALID;
   };
 }

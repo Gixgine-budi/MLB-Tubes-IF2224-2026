@@ -110,11 +110,11 @@ class Lexer {
    * token type or next state.
    *
    * @param c             the character to be parsed
-   * @param isInvalid     reference to the type of invalid state to be modified
+   * @param invalid       reference to the type of invalid state to be modified
    * if the parse result is invalid, otherwise left unchanged
    * @return StateOrToken token to be emiited or the next state
    */
-  StateOrToken parse_symbol(char c, InvalidType& isInvalid);
+  StateOrToken parse_symbol(char c, InvalidType& invalid);
 
   /**
    * @brief Parse a keyword from the current state of buufer and return the

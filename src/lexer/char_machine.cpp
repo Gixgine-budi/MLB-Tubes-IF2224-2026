@@ -22,19 +22,26 @@ CharMachine::~CharMachine() {
 }
 
 bool CharMachine::advance() {
-  if (!stream_.is_open())
+  if (!stream_.is_open()) {
     throw FileErrorException(filepath_, "stream is not open");
+  }
+
   if (eof()) {
     current_ = '\0';
     return false;
   }
 
-  stream_.get(current_);
   if (current_ == '\n') {
     line_num_++;
     col_num_ = 1;
   } else {
     col_num_++;
+  }
+
+  stream_.get(current_);
+  if (!stream_) {
+    current_ = '\0';
+    return false;
   }
 
   return true;
