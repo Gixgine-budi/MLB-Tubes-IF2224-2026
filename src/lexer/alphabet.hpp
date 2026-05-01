@@ -6,9 +6,6 @@
  *
  */
 struct Alphabet {
-  static const std::string letters;
-  static const std::string digits;
-  static const std::string whitespace;
   static const std::string symbols;
 
   /**

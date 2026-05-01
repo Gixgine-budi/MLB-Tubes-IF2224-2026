@@ -1,44 +1,54 @@
+#include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <vector>
 
+#include "arion_exceptions.hpp"
 #include "lexer/char_machine.hpp"
 #include "lexer/lexer.hpp"
 
 int main(int argc, char* argv[]) {
-  std::string filepath;
-
   if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <filepath>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <filepath>"
+              << "\n";
     return 1;
   }
 
-  filepath = argv[1];
+  const std::string filepath = argv[1];
+  const std::string output_path = filepath + ".token";
 
-  // Lexical Analyzer
   try {
     CharMachine reader(filepath);
     Lexer lexer(reader);
-    lexer.read();
+    bool lexer_error = false;
 
-    std::cout << "Lexical analysis completed successfully.\n";
-    std::cout << "Read " << reader.line_num() << " lines. and "
-              << lexer.tokens().size() << " tokens.\n";
+    try {
+      lexer.process();
+    } catch (const std::vector<InvalidTokenException>& err) {
+      lexer_error = true;
+      for (const auto& e : err) {
+        std::cerr << e.what() << "\n";
+      }
+    }
 
-    std::cout << "Enter output file path > ";
-    std::getline(std::cin, filepath);
-    std::ofstream output_file(filepath);
-    if (!output_file.is_open())
-      throw std::runtime_error("Failed to open output file: " + filepath);
+    std::ofstream output_file(output_path);
+    if (!output_file.is_open()) {
+      throw std::runtime_error("Failed to open output file: " + output_path);
+    }
 
     auto tokens = lexer.tokens();
     for (const auto& token : tokens) {
       output_file << token << '\n';
     }
 
-    std::cout << "Tokens have been written to " << filepath << std::endl;
+    return lexer_error ? 1 : 0;
 
+  } catch (const ArionException& e) {
+    std::cerr << e.what() << "\n";
+    return 1;
   } catch (const std::exception& e) {
-    std::cerr << "Error: " << e.what() << std::endl;
+    std::cerr << e.what() << "\n";
     return 1;
   }
 }

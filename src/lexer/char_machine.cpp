@@ -1,12 +1,17 @@
 #include "char_machine.hpp"
 
 #include <cassert>
-#include <stdexcept>
+#include <cerrno>
+#include <system_error>
 
-CharMachine::CharMachine(const std::string& filepath) {
-  stream_.open(filepath);
-  if (!stream_.is_open())
-    throw std::runtime_error("Failed to open file " + filepath);
+#include "arion_exceptions.hpp"
+
+CharMachine::CharMachine(const std::string& filepath) : filepath_(filepath) {
+  stream_.open(filepath_);
+  if (!stream_.is_open()) {
+    auto err = std::system_error(errno, std::generic_category());
+    throw FileErrorException(filepath_, err.what());
+  }
   stream_.get(current_);
 }
 
@@ -17,18 +22,26 @@ CharMachine::~CharMachine() {
 }
 
 bool CharMachine::advance() {
-  if (!stream_.is_open()) throw std::runtime_error("Stream is not open");
+  if (!stream_.is_open()) {
+    throw FileErrorException(filepath_, "stream is not open");
+  }
+
   if (eof()) {
     current_ = '\0';
     return false;
   }
 
-  stream_.get(current_);
   if (current_ == '\n') {
     line_num_++;
     col_num_ = 1;
   } else {
     col_num_++;
+  }
+
+  stream_.get(current_);
+  if (!stream_) {
+    current_ = '\0';
+    return false;
   }
 
   return true;

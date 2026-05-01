@@ -4,9 +4,6 @@
 #include <cctype>
 #include <string>
 
-const std::string Alphabet::letters = "abcdefghijklmnopqrstuvwxyz";
-const std::string Alphabet::digits = "0123456789";
-const std::string Alphabet::whitespace = " \t\n\r";
 const std::string Alphabet::symbols = "+-*/=<>()[]{}.,;:\'";
 
 bool Alphabet::is_letter(char c) {

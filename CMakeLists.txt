@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(arion_interpreter VERSION 0.1.1 LANGUAGES CXX)
+project(arionin VERSION 0.1.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -14,18 +14,18 @@ add_library(arion_lexer
   src/lexer/alphabet.cpp
   )
 
-target_include_directories(arion_lexer PUBLIC src/lexer)
+target_include_directories(arion_lexer PUBLIC src)
 
-add_executable(arion_interpreter src/main.cpp)
+add_executable(arionin src/main.cpp)
 
-target_link_libraries(arion_interpreter PRIVATE arion_lexer)
+target_link_libraries(arionin PRIVATE arion_lexer)
 
 if(MSVC)
-  target_compile_options(arion_interpreter PRIVATE /W4)
+  target_compile_options(arionin PRIVATE /W4)
 else()
-  target_compile_options(arion_interpreter PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(arionin PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 install(
-  TARGETS arion_interpreter
+  TARGETS arionin
   RUNTIME DESTINATION bin)

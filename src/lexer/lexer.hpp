@@ -2,30 +2,42 @@
 
 #include <vector>
 
+#include "arion_exceptions.hpp"
 #include "char_machine.hpp"
 #include "state.hpp"
 #include "token.hpp"
 
 class Lexer {
  public:
+  /**
+   * @brief Construct a new lexical analyzer with a valid reader
+   *
+   * @param reader the reference to a valids character machine reader
+   */
   Lexer(CharMachine& reader);
 
   /**
    * @brief Read characters from the input and emit tokens until the end of
-   * input is reached. Wrapper and public API for the lexer.
+   * input is reached. Wrapper and public API for the lexer. Only need to be
+   * called once.
+   *
+   * @throw vector<InvalidTokenException> at the end after all characters read
    */
-  void read();
+  void process();
 
   /**
    * @brief Returns the list of tokens emitted by the lexer.
    *
-   * @return auto
+   * @return reference to the list of tokens
    */
-  auto tokens() const { return tokens_; }
+  const std::vector<Token>& tokens() const { return tokens_; }
 
  private:
   CharMachine& reader_;        ///< Character reader
-  std::vector<Token> tokens_;  ///< List of tokens emitted by the lexer
+  std::vector<Token> tokens_;  ///< List of raw tokens emitted by the lexer
+
+  ///< List of invalid tokens to be thrown
+  std::vector<InvalidTokenException> errors_;
 
   State current_ = State::START;  ///< Current state of the lexer
   Token buffer_;  ///< Buffer for the current token being processed
@@ -54,11 +66,27 @@ class Lexer {
   bool transition();
 
   /**
-   * @brief Check if the reader has reached the end of input and current sate is
+   * @brief Handle edge case for states when reached EOF. Basically emit the
+   * last token that remains in buffer and handle states with open/closing (e.g.
+   * quote/string, comments)
+   *
+   * @return almost always returns true unless the current is a start state
+   */
+  bool handle_eof();
+
+  /**
+   * @brief Handle edge case to emit two tokens after accepting period after an
+   * intcon (pre realcon) but the next character isn't a digit.
+   *
+   * @return true (emit two tokens)
+   */
+  bool handle_in_period_intcon();
+
+  /**
+   * @brief Check if the reader has reached eof and current sate is
    * at START state as the stop condition for the lexer.
    *
-   * @return true
-   * @return false
+   * @return true if all characters has consumed, false otherwise
    */
   bool is_done() const;
 
@@ -66,24 +94,33 @@ class Lexer {
    * @brief Consume a character from the reader and add it to the current token
    * buffer.
    *
-   * @param c
+   * @param c the character to be consumed
    */
   void consume(char c);
+
+  /**
+   * @brief Reset the state machine after emitting the token (empty buffer and
+   * switch to start state)
+   *
+   */
+  void reset();
 
   /**
    * @brief Parse symbol starting with character c and return the resulting
    * token type or next state.
    *
-   * @param c                     current character
-   * @return StateOrToken         next state or token type
+   * @param c             the character to be parsed
+   * @param invalid       reference to the type of invalid state to be modified
+   * if the parse result is invalid, otherwise left unchanged
+   * @return StateOrToken token to be emiited or the next state
    */
-  StateOrToken parse_symbol(char c);
+  StateOrToken parse_symbol(char c, InvalidType& invalid);
 
   /**
-   * @brief Parse a keyword from the input and return the corresponding token
-   * type.
+   * @brief Parse a keyword from the current state of buufer and return the
+   * corresponding token type.
    *
-   * @return StateOrToken         token type (keyword) or IDENT if not a keyword
+   * @return TokenType         token type (keyword) or IDENT if not a keyword
    */
-  StateOrToken parse_keyword();
+  TokenType parse_keyword();
 };
