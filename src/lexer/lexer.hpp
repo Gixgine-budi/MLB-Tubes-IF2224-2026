@@ -18,20 +18,26 @@ class Lexer {
 
   /**
    * @brief Read characters from the input and emit tokens until the end of
-   * input is reached. Wrapper and public API for the lexer.
+   * input is reached. Wrapper and public API for the lexer. Only need to be
+   * called once.
+   *
+   * @throw vector<InvalidTokenException> at the end after all characters read
    */
-  void read();
+  void process();
 
   /**
    * @brief Returns the list of tokens emitted by the lexer.
    *
-   * @return auto
+   * @return reference to the list of tokens
    */
-  auto tokens() const { return tokens_; }
+  const std::vector<Token>& tokens() const { return tokens_; }
 
  private:
   CharMachine& reader_;        ///< Character reader
-  std::vector<Token> tokens_;  ///< List of tokens emitted by the lexer
+  std::vector<Token> tokens_;  ///< List of raw tokens emitted by the lexer
+
+  ///< List of invalid tokens to be thrown
+  std::vector<InvalidTokenException> errors_;
 
   State current_ = State::START;  ///< Current state of the lexer
   Token buffer_;  ///< Buffer for the current token being processed
