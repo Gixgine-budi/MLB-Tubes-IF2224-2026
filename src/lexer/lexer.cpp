@@ -4,6 +4,8 @@
 
 #include "lexer/token.hpp"
 
+namespace lexer {
+
 Lexer::Lexer(CharMachine& reader) : reader_(reader) {}
 
 void Lexer::process() {
@@ -19,3 +21,5 @@ void Lexer::process() {
     throw errors_;
   }
 }
+
+}  // namespace lexer

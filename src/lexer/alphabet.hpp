@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 
+namespace lexer {
+
 /**
  * @brief Valid character sets and helper functions for character classification
  *
@@ -53,3 +55,5 @@ struct Alphabet {
    */
   static std::string to_lower(const std::string& s);
 };
+
+}  // namespace lexer

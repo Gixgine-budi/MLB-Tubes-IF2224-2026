@@ -7,6 +7,8 @@
 #include "state.hpp"
 #include "token.hpp"
 
+namespace lexer {
+
 class Lexer {
  public:
   /**
@@ -124,3 +126,5 @@ class Lexer {
    */
   TokenType parse_keyword();
 };
+
+}  // namespace lexer

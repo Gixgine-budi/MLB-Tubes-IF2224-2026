@@ -39,7 +39,7 @@ class FileErrorException : public ArionException {
 
 class InvalidTokenException : public ArionException {
  public:
-  InvalidTokenException(const std::string& filename, const Token& token)
+  InvalidTokenException(const std::string& filename, const lexer::Token& token)
       : ArionException(filename), token_(token) {
     message_ = std::string(filename_)
                    .append(":")
@@ -51,7 +51,7 @@ class InvalidTokenException : public ArionException {
   }
 
  private:
-  const Token token_;
+  const lexer::Token token_;
 };
 
 class InvalidSyntaxException : public ArionException {};

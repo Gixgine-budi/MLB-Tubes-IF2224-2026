@@ -2,6 +2,8 @@
 
 #include <ostream>
 
+namespace lexer {
+
 std::ostream& operator<<(std::ostream& os, const Token& t) {
   switch (t.type) {
     case TokenType::INVALID:
@@ -208,3 +210,5 @@ const std::string Token::error_message() const {
   }
   return "";
 }
+
+}  // namespace lexer

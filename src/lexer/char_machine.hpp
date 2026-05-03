@@ -3,6 +3,8 @@
 #include <fstream>
 #include <string>
 
+namespace lexer {
+
 /**
  * Buffered single-character reader over a std::ifstream
  * After construction, the first input character is already loaded (or EOF is
@@ -75,3 +77,5 @@ class CharMachine {
    */
   bool eof() const noexcept { return stream_.eof(); }
 };
+
+}  // namespace lexer

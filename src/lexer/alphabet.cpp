@@ -4,6 +4,8 @@
 #include <cctype>
 #include <string>
 
+namespace lexer {
+
 const std::string Alphabet::symbols = "+-*/=<>()[]{}.,;:\'";
 
 bool Alphabet::is_letter(char c) {
@@ -27,3 +29,5 @@ std::string Alphabet::to_lower(const std::string& s) {
                 [](char& c) { c = (char)tolower(c); });
   return lower;
 }
+
+}  // namespace lexer

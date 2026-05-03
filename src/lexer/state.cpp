@@ -4,6 +4,8 @@
 #include "lexer.hpp"
 #include "token.hpp"
 
+namespace lexer {
+
 StateOrToken Lexer::parse_symbol(char c, InvalidType& invalid) {
   switch (c) {
     case '+':
@@ -502,3 +504,5 @@ bool Lexer::handle_in_period_intcon() {
   reset();
   return true;
 }
+
+}  // namespace lexer

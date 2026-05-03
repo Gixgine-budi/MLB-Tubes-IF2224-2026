@@ -3,6 +3,8 @@
 
 #include "token.hpp"
 
+namespace lexer {
+
 /**
  * @brief Enum representing the states of the lexer based on the handwritten DFA
  * in the report. The ident and keyword states is collapsed into the IN_IDENT
@@ -38,3 +40,5 @@ enum class State : int {
 
 // Hold either a State or a TokenType, used for state transitions in the lexer
 using StateOrToken = std::variant<State, TokenType>;
+
+}  // namespace lexer

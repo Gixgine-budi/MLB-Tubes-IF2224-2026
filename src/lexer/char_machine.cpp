@@ -6,6 +6,8 @@
 
 #include "arion_exceptions.hpp"
 
+namespace lexer {
+
 CharMachine::CharMachine(const std::string& filepath) : filepath_(filepath) {
   stream_.open(filepath_);
   if (!stream_.is_open()) {
@@ -46,3 +48,5 @@ bool CharMachine::advance() {
 
   return true;
 }
+
+}  // namespace lexer

@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
   const std::string output_path = filepath + ".token";
 
   try {
-    CharMachine reader(filepath);
-    Lexer lexer(reader);
+    lexer::CharMachine reader(filepath);
+    lexer::Lexer lexer(reader);
     bool lexer_error = false;
 
     try {

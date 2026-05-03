@@ -3,6 +3,8 @@
 #include <ostream>
 #include <string>
 
+namespace lexer {
+
 /**
  * @brief Enum representing the all valid token types
  *
@@ -109,3 +111,5 @@ struct Token {
    */
   const std::string error_message() const;
 };
+
+}  // namespace lexer
