@@ -7,19 +7,19 @@ namespace lexer {
 std::ostream& operator<<(std::ostream& os, const Token& t) {
   switch (t.type) {
     case TokenType::INVALID:
-      os << "unknown (" << t.lexeme << ")";
+      os << "unknown(" << t.lexeme << ")";
       break;
     case TokenType::INTCON:
-      os << "intcon (" << t.lexeme << ")";
+      os << "intcon(" << t.lexeme << ")";
       break;
     case TokenType::REALCON:
-      os << "realcon (" << t.lexeme << ")";
+      os << "realcon(" << t.lexeme << ")";
       break;
     case TokenType::CHARCON:
-      os << "charcon (" << t.lexeme << ")";
+      os << "charcon(" << t.lexeme << ")";
       break;
     case TokenType::STRING:
-      os << "string (" << t.lexeme << ")";
+      os << "string(" << t.lexeme << ")";
       break;
     case TokenType::NOTSY:
       os << "notsy";
@@ -118,7 +118,7 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
       os << "programsy";
       break;
     case TokenType::IDENT:
-      os << "ident (" << t.lexeme << ")";
+      os << "ident(" << t.lexeme << ")";
       break;
     case TokenType::BEGINSY:
       os << "beginsy";
@@ -163,7 +163,7 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
       os << "thensy";
       break;
     case TokenType::COMMENT:
-      os << "comment (" << t.lexeme << ")";
+      os << "comment(" << t.lexeme << ")";
       break;
   }
   return os;
