@@ -228,7 +228,7 @@ class Parser {
    */
   ParsePtr parseParameterGroup();
 
-  // ---------------------------- parse_body.cpp ----------------------------
+  // -------------------------- parse_statement.cpp --------------------------
 
   /**
    * @brief beginsy + statement-list + endsy

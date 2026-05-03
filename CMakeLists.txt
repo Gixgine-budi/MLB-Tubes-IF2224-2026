@@ -21,6 +21,9 @@ add_library(
   
   src/parser/parse_node.cpp
   src/parser/parser.cpp
+  src/parser/parse_function.cpp
+  src/parser/parse_statement.cpp
+  src/parser/parse_expression.cpp
 )
 
 target_include_directories(arion_lexer PUBLIC src)
