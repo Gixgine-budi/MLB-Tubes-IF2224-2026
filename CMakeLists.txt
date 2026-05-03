@@ -20,6 +20,7 @@ add_library(
   arion_parser
   
   src/parser/parse_node.cpp
+  src/parser/parser.cpp
 )
 
 target_include_directories(arion_lexer PUBLIC src)

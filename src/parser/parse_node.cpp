@@ -102,6 +102,7 @@ std::ostream& operator<<(std::ostream& os, const ParseNode& node) {
       else
         return os << "TokenNode";
   }
+  return os;
 }
 
 void ParseNode::print(bool isLast, int depth) const {
