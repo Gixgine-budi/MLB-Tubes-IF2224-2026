@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "arion_exceptions.hpp"
-#include "char_machine.hpp"
+#include "io/char_machine.hpp"
 #include "state.hpp"
 #include "token.hpp"
 
@@ -16,7 +16,7 @@ class Lexer {
    *
    * @param reader the reference to a valids character machine reader
    */
-  Lexer(CharMachine& reader);
+  Lexer(io::CharMachine& reader);
 
   /**
    * @brief Read characters from the input and emit tokens until the end of
@@ -35,7 +35,7 @@ class Lexer {
   const std::vector<Token>& tokens() const { return tokens_; }
 
  private:
-  CharMachine& reader_;        ///< Character reader
+  io::CharMachine& reader_;    ///< Character reader
   std::vector<Token> tokens_;  ///< List of raw tokens emitted by the lexer
 
   ///< List of invalid tokens to be thrown

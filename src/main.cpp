@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "arion_exceptions.hpp"
-#include "lexer/char_machine.hpp"
+#include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
 
 int main(int argc, char* argv[]) {
@@ -15,11 +15,12 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  const std::string filepath = argv[1];
-  const std::string output_path = filepath + ".token";
+  const std::string source_name = argv[1];
+  const std::string output_path = source_name + ".token";
 
   try {
-    lexer::CharMachine reader(filepath);
+    std::ifstream stream(source_name);
+    io::CharMachine reader(stream, source_name);
     lexer::Lexer lexer(reader);
     bool lexer_error = false;
 

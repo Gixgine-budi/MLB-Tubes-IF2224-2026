@@ -2,11 +2,12 @@
 
 #include <vector>
 
+#include "io/char_machine.hpp"
 #include "lexer/token.hpp"
 
 namespace lexer {
 
-Lexer::Lexer(CharMachine& reader) : reader_(reader) {}
+Lexer::Lexer(io::CharMachine& reader) : reader_(reader) {}
 
 void Lexer::process() {
   while (!is_done()) {
