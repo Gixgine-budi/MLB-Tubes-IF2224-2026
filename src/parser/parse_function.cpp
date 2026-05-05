@@ -59,12 +59,10 @@ ParsePtr Parser::parseBlock() {
 ParsePtr Parser::parseFormalParameterList() {
   auto node = std::make_unique<ParseNode>(NodeType::FormalParameterList);
   node->addChild(consume(TokenType::LPARENT));
-  if (current().type != TokenType::RPARENT) {
+  node->addChild(parseParameterGroup());
+  while (current().type == TokenType::SEMICOLON) {
+    node->addChild(consume(TokenType::SEMICOLON));
     node->addChild(parseParameterGroup());
-    while (current().type == TokenType::SEMICOLON) {
-      node->addChild(consume(TokenType::SEMICOLON));
-      node->addChild(parseParameterGroup());
-    }
   }
   node->addChild(consume(TokenType::RPARENT));
   return node;
