@@ -85,8 +85,8 @@ ParsePtr Parser::parseStatement() {
       node->addChild(parseForStatement());
       break;
     case TokenType::IDENT: {
-      // procedure/function-call starts with ident + lparent (Milestone 2 TBFO).
-      // Otherwise parse variable for assignment-statement.
+      // ident lparent begins a call; otherwise parse a variable and require
+      // becomes (:=) on the LHS.
       if (!is_done() && peek(1).type == TokenType::LPARENT) {
         node->addChild(parseFunctionCall());
       } else {
