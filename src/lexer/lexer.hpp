@@ -4,8 +4,8 @@
 
 #include "arion_exceptions.hpp"
 #include "io/char_machine.hpp"
-#include "state.hpp"
-#include "token.hpp"
+#include "lexer/state.hpp"
+#include "lexer/token.hpp"
 
 namespace lexer {
 

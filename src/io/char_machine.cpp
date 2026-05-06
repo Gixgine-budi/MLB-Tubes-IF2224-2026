@@ -1,4 +1,4 @@
-#include "char_machine.hpp"
+#include "io/char_machine.hpp"
 
 #include <ios>
 #include <istream>

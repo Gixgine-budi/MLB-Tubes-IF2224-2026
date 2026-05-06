@@ -1,8 +1,8 @@
-#include "state.hpp"
+#include "lexer/state.hpp"
 
-#include "alphabet.hpp"
-#include "lexer.hpp"
-#include "token.hpp"
+#include "lexer/alphabet.hpp"
+#include "lexer/lexer.hpp"
+#include "lexer/token.hpp"
 
 namespace lexer {
 

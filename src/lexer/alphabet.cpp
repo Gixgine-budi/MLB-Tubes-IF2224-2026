@@ -1,4 +1,4 @@
-#include "alphabet.hpp"
+#include "lexer/alphabet.hpp"
 
 #include <algorithm>
 #include <cctype>
