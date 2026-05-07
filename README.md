@@ -1,102 +1,102 @@
-# Arion Lexer (MLB-Tubes-IF2224-2026)
+# Arion Interpreter
 
-Arion is a Pascal-like programming language. This repository provides a modular, hand-written lexical analyzer (lexer) for Arion, implemented in C++.
+### MLB-Tubes-IF2224-2026
 
-The lexer processes source text one character at a time and classifies lexemes using a Deterministic Finite Automaton (DFA). It recognizes a comprehensive set of tokens including literals, operators, punctuation, keywords, identifiers, and comments. The implementation relies entirely on a custom state machine rather than auto-generated code.
+## Tentang Program
 
-This codebase includes the core C++ lexer components (`CharMachine`, `Lexer`, `Token`, states, alphabet) along with a command-line driver that tokenizes a given source file and outputs the resulting tokens.
+Arion Interpreter adalah sebuah proyek yang bertujuan untuk mengembangkan sebuah interpreter sederhana untuk bahasa pemrograman sendiri bernama Arion. Proyek ini mencakup implementasi lexer, parser, dan diagnoser untuk bahasa tersebut, serta integrasi ke dalam sebuah executable yang dapat dijalankan dari command line.
 
-## Contributors
+### Lexer
 
-Group K01 - MLB
+Lexer adalah komponen pertama dalam interpreter yang bertanggung jawab untuk menganalisis kode sumber karakter per karakter dan mengkonversinya menjadi token-token yang bermakna. 
 
-|   NIM    |            Name            |       Role       |
-| -------- | -------------------------- | ---------------- |
-| 13524009 | Mikhael Benrael Tampubolon | Document writing |
-| 13524011 | Muhammad Iqbal Raihan      | DFA graph design |
-| 13524025 | Moh Hafizh Irham Perdana   | Document writing |
-| 13524099 | Muhammad Akmal             | Implementations  |
+**Metode Implementasi:**
+- Menggunakan Deterministic Finite Automaton (DFA) untuk mengenali pola-pola leksikal
+- Melakukan scanning satu pass melalui source code
+- Mengidentifikasi token: keywords, identifiers, operators, literals, dan delimiters
+- Menyimpan informasi line dan column untuk error reporting
 
-## Requirements
+### Parser
 
-- C++17 or newer
-- CMake 3.16 or newer
-- A compatible C++ compiler (GCC/Clang on Linux/macOS, MSVC or MinGW on Windows)
+Parser adalah komponen kedua yang mengambil aliran token dari lexer dan membangun Parse Tree berdasarkan grammar bahasa Arion.
 
-## Installation and usage
+**Metode Implementasi:**
+- Menggunakan teknik Recursive Descent Parsing
+- Mengikuti context-free grammar untuk bahasa Arion
+- Memvalidasi struktur sintaks program
+- Menghasilkan parse tree yang merepresentasikan hierarki sintaks program
+- Menangani operator precedence dan associativity dengan benar
+
+### Error Handling (Diagnoser)
+
+Diagnoser adalah komponen yang mendeteksi, mengklasifikasi, dan melaporkan berbagai kesalahan yang terjadi selama proses lexical analysis, parsing, dan semantic analysis.
+
+**Metode Implementasi:**
+- Menangkap error lexical (karakter invalid, literal format salah)
+- Menangkap error syntax (token unexpected, struktur grammar salah)
+- Menangkap error semantic (type mismatch, undefined variable)
+- Menyimpan posisi error (line dan column) untuk diagnostic messages yang akurat
+- Menggunakan error recovery untuk melanjutkan parsing dan menemukan error tambahan
+
+## Kebutuhan Sistem
+
+- C++17 atau lebih baru
+- CMake 3.16 atau lebih baru
+- Compiler C++ yang kompatibel (GCC/Clang di Linux/macOS, MSVC atau MinGW di Windows)
+
+## Instalasi dan penggunaan
 
 ### Build
 
-To compile the project from the repository root, run:
-
-```
+Untuk membangun proyek, jalankan perintah berikut di terminal dari direktori root proyek:
+```sh
 cmake -S . -B build
 cmake --build build
 ```
 
-### Run
+### Menjalankan Program
 
-The driver program expects exactly one argument: the path to an Arion source file (plain text in `.txt` format).
-
-Linux or macOS:
-
-```
-./build/arion_interpreter path/to/source.txt
+* Langsung menjalankan executable. Hasil parsing ada di `path/to/source.txt.ptree`.
+```sh
+./arionin path/to/source.txt
 ```
 
-Windows (if using MSVC/Visual Studio generator):
-
-```
-build\Debug\arion_interpreter.exe path\to\source.txt
-```
-
-Windows (if using Ninja or MinGW generator):
-
-```
-build\arion_interpreter.exe path\to\source.txt
+* Hanya menjalankan lexer untuk melihat token yang dihasilkan. Hasil token ada di `path/to/source.txt.tokens`.
+```sh
+./arionin --lexer path/to/source.txt
 ```
 
-Tokens are printed to standard output, one per line. You can redirect the output to a file to save the token list:
-
-Linux or macOS:
-
-```
-./build/arion_interpreter sample.txt > tokens.txt
+* Menampilkan hasil ke terminal tanpa menyimpan ke file.
+```sh
+./arionin --dump path/to/source.txt
 ```
 
-Windows (PowerShell):
+## Kontributor
 
-```
-.\build\arion_interpreter.exe sample.txt | Out-File -Encoding ascii tokens.txt
-```
+**Kelompok MauLiburanBang**  
+**K01 MLB**
 
-### Error handling
+### Milestone 1: Lexer
 
-If the argument count is incorrect, the program will print a brief usage message and terminate with a non-zero exit code.
+|   NIM    |           Nama             |      Peran       |
+| -------- | -------------------------- | ---------------- |
+| 13524009 | Mikhael Benrael Tampubolon | Penulisan Laporan |
+| 13524011 | Muhammad Iqbal Raihan      | Desain DFA dan Diagram Transisi, Implementasi awal |
+| 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan |
+| 13524099 | Muhammad Akmal             | Implementasi DFA, Implentasi seluruh Modul |
 
-## Repository layout
+### Milestone 2: Parser
 
-```text
-.
-├── bin/             # Dependency tracking files
-├── build/           # CMake build output directory (generated)
-├── doc/             # Documentation and design reports
-├── src/             # C++ source code
-│   ├── lexer/       # Core lexer modules (DFA states, tokens, char machine)
-│   └── main.cpp     # Entry point and command-line driver
-├── test/            # Sample inputs and expected outputs for testing
-├── .clang-format    # Code formatting configuration
-├── .gitignore       # Git ignore rules
-├── CMakeLists.txt   # CMake build configuration
-└── README.md        # Project documentation
-```
+|   NIM    |           Nama             |      Peran       |
+| -------- | -------------------------- | ---------------- |
+| 13524009 | Mikhael Benrael Tampubolon | Penulisan Laporan, Parser Expression |
+| 13524011 | Muhammad Iqbal Raihan      | Parser Function, Parser Statement |
+| 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan, Parser Header |
+| 13524099 | Muhammad Akmal             | Implementasi Parser, Diagnoser, Integrasi ke Main |
 
-## References
+*IF2224 Teori Bahasa Formal dan Automata*
+*Semester II Tahun Ajaran 2025/2026*
 
-- Compiler Design - Lexical Analysis (TutorialsPoint)
-- Hopcroft, Motwani, Ullman - Introduction to Automata Theory, Languages, and Computation, 3rd ed.
-- Aho et al. - Compilers: Principles, Techniques, and Tools
-- GNU Make manual - Introduction to Makefiles
-- https://lcc.s3.amazonaws.com/book/pdf/06lexical-analysis.pdf
-- https://symbolaris.com/course/Compilers/06-lex.pdf
-- https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/lectures/01/Slides01.pdf
+**Program Studi Teknik Informatika**  
+**Sekolah Teknik Elektro dan Informatika**
+**Institut Teknologi Bandung**
