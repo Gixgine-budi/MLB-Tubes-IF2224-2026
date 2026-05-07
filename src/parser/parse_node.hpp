@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "lexer/token.hpp"
@@ -70,11 +71,13 @@ class ParseNode {
     children_.push_back(std::move(child));
   }
 
-  void print(bool isLast, int depth = 0) const;
+  void print() const;
 
   friend std::ostream& operator<<(std::ostream& os, const ParseNode& node);
 
  private:
+  void printRecursive(const std::string& prefix, bool isLast) const;
+
   NodeType type_;
   std::optional<lexer::Token> token_;
   std::vector<std::unique_ptr<ParseNode>> children_;

@@ -8,6 +8,7 @@
 #include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -24,12 +25,10 @@ int main(int argc, char* argv[]) {
     io::CharMachine reader(stream, source_name);
     diag::Diagnoser diagnoser(source_name, reader.lines());
     lexer::Lexer lexer(reader, diagnoser);
-    bool lexer_error = false;
 
     try {
       lexer.process();
     } catch (const std::vector<InvalidTokenException>& err) {
-      lexer_error = true;
       for (const auto& e : err) {
         std::cerr << e.what() << "\n";
       }
@@ -45,9 +44,14 @@ int main(int argc, char* argv[]) {
       output_file << token << '\n';
     }
 
+    parser::Parser parser(source_name, tokens);
+    parser.parse();
+
+    parser.program().print();
+
     std::cerr << diagnoser;
 
-    return lexer_error ? 1 : 0;
+    return diagnoser.has_error() ? 1 : 0;
 
   } catch (const ArionException& e) {
     std::cerr << e.what() << "\n";
