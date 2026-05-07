@@ -1,5 +1,5 @@
-ident (a)
+ident(a)
 colon
 unknown(=)
-intcon (1)
+intcon(1)
 semicolon

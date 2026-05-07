@@ -1,18 +1,14 @@
 programsy
-ident (P)
+ident(P)
 semicolon
-
 beginsy
-
-ident (a)
+ident(a)
 becomes
-intcon (1)
+intcon(1)
 semicolon
-
-
-ident (b)
+ident(b)
 becomes
-intcon (2)
+intcon(2)
 semicolon
 endsy
 period

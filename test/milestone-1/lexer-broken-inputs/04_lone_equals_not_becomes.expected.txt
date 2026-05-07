@@ -1,4 +1,4 @@
-ident (a)
+ident(a)
 unknown(=)
-ident (b)
+ident(b)
 semicolon

@@ -1,6 +1,6 @@
-ident (a)
+ident(a)
 becomes
 unknown(")
-ident (oops)
+ident(oops)
 unknown(")
 semicolon

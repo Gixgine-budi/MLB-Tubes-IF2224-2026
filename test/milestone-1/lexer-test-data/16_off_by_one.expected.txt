@@ -1,26 +1,27 @@
 programsy
-ident (OffByOne)
+ident(OffByOne)
 semicolon
 varsy
-ident (i)
+ident(i)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (i)
+ident(i)
 becomes
-intcon (0)
+intcon(0)
 semicolon
 whilesy
-ident (i)
+ident(i)
 leq
-intcon (10)
+intcon(10)
 dosy
-ident (i)
+ident(i)
 becomes
-ident (i)
+ident(i)
 plus
-intcon (1)
+intcon(1)
 semicolon
+comment( 11 iterations is basically 10 )
 endsy
 period

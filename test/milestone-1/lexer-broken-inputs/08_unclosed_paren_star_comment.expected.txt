@@ -1,3 +1,4 @@
-ident (ok)
+ident(ok)
 semicolon
-unknown((* star comment not closed)
+unknown((* star comment not closed
+)

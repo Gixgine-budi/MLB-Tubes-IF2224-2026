@@ -1,3 +1,4 @@
-ident (x)
+ident(x)
 semicolon
-unknown({ opened with brace, *) does not close this)
+unknown({ opened with brace, *) does not close this
+)

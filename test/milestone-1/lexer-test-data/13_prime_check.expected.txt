@@ -1,52 +1,52 @@
 programsy
-ident (PrimeCheck)
+ident(PrimeCheck)
 semicolon
 varsy
-ident (n)
+ident(n)
 comma
-ident (i)
+ident(i)
 comma
-ident (ok)
+ident(ok)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (n)
+ident(n)
 becomes
-intcon (17)
+intcon(17)
 semicolon
-ident (ok)
+ident(ok)
 becomes
-intcon (1)
+intcon(1)
 semicolon
-ident (i)
+ident(i)
 becomes
-intcon (2)
+intcon(2)
 semicolon
 whilesy
-ident (i)
+ident(i)
 times
-ident (i)
+ident(i)
 leq
-ident (n)
+ident(n)
 dosy
 beginsy
 ifsy
-ident (n)
+ident(n)
 imod
-ident (i)
+ident(i)
 eql
-intcon (0)
+intcon(0)
 thensy
-ident (ok)
+ident(ok)
 becomes
-intcon (0)
+intcon(0)
 semicolon
-ident (i)
+ident(i)
 becomes
-ident (i)
+ident(i)
 plus
-intcon (1)
+intcon(1)
 semicolon
 endsy
 semicolon

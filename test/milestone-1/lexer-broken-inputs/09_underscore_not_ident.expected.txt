@@ -1,5 +1,5 @@
-ident (x)
+ident(x)
 becomes
 unknown(_)
-ident (notAnIdent)
+ident(notAnIdent)
 semicolon

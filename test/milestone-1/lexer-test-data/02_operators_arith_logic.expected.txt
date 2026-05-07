@@ -1,17 +1,17 @@
-ident (a)
+ident(a)
 plus
-intcon (5)
+intcon(5)
 minus
-intcon (2)
+intcon(2)
 times
-intcon (3)
+intcon(3)
 idiv
-intcon (4)
+intcon(4)
 rdiv
-realcon (2.5)
+realcon(2.5)
 imod
-intcon (2)
+intcon(2)
 andsy
 orsy
 notsy
-ident (x)
+ident(x)

@@ -1,15 +1,16 @@
 programsy
-ident (CopyPasteFromWeb)
+ident(CopyPasteFromWeb)
 semicolon
 varsy
-ident (magicNumber)
+ident(magicNumber)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (magicNumber)
+ident(magicNumber)
 becomes
-intcon (42)
+intcon(42)
 semicolon
+comment( works in prod, do not touch )
 endsy
 period

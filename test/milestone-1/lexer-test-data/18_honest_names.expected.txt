@@ -1,29 +1,29 @@
 programsy
-ident (HonestVariableNames)
+ident(HonestVariableNames)
 semicolon
 varsy
-ident (itWorksOnMyMachine)
+ident(itWorksOnMyMachine)
 comma
-ident (probablyFine)
+ident(probablyFine)
 comma
-ident (shipIt)
+ident(shipIt)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (probablyFine)
+ident(probablyFine)
 becomes
-intcon (0)
+intcon(0)
 semicolon
-ident (shipIt)
+ident(shipIt)
 becomes
-ident (probablyFine)
+ident(probablyFine)
 plus
-intcon (1)
+intcon(1)
 semicolon
-ident (itWorksOnMyMachine)
+ident(itWorksOnMyMachine)
 becomes
-ident (shipIt)
+ident(shipIt)
 semicolon
 endsy
 period

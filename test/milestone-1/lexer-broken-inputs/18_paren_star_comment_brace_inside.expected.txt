@@ -1,4 +1,5 @@
-ident (a)
+ident(a)
 semicolon
-ident (b)
+comment( this is paren-star style } still comment until star-paren closes )
+ident(b)
 semicolon

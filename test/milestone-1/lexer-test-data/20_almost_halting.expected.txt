@@ -1,26 +1,26 @@
 programsy
-ident (AlmostHalting)
+ident(AlmostHalting)
 semicolon
 varsy
-ident (busy)
+ident(busy)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (busy)
+ident(busy)
 becomes
-intcon (1)
+intcon(1)
 semicolon
 whilesy
-ident (busy)
+ident(busy)
 neq
-intcon (0)
+intcon(0)
 dosy
-ident (busy)
+ident(busy)
 becomes
-ident (busy)
+ident(busy)
 plus
-ident (busy)
+ident(busy)
 semicolon
 endsy
 period

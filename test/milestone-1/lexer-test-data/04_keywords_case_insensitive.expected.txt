@@ -1,43 +1,43 @@
 programsy
-ident (Demo)
+ident(Demo)
 semicolon
 beginsy
 ifsy
-ident (True)
+ident(True)
 thensy
-ident (x)
+ident(x)
 becomes
-intcon (1)
+intcon(1)
 semicolon
 whilesy
-ident (y)
+ident(y)
 dosy
-ident (z)
+ident(z)
 becomes
-intcon (2)
+intcon(2)
 semicolon
 forsy
-ident (i)
+ident(i)
 tosy
-ident (n)
+ident(n)
 dosy
-ident (k)
+ident(k)
 becomes
-intcon (3)
+intcon(3)
 semicolon
 casesy
-ident (v)
+ident(v)
 ofsy
-ident (w)
+ident(w)
 colon
-ident (t)
+ident(t)
 semicolon
 endsy
 semicolon
 repeatsy
-ident (u)
+ident(u)
 untilsy
-ident (q)
+ident(q)
 semicolon
 endsy
 period
