@@ -1,7 +1,7 @@
 #pragma once
 #include <variant>
 
-#include "token.hpp"
+#include "lexer/token.hpp"
 
 namespace lexer {
 

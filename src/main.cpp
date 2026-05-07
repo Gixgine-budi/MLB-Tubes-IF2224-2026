@@ -1,12 +1,15 @@
+#include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "arion_exceptions.hpp"
-#include "lexer/char_machine.hpp"
+#include "diagnoser/diagnoser.hpp"
+#include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -15,21 +18,25 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  const std::string filepath = argv[1];
-  const std::string output_path = filepath + ".token";
+  const std::string source_name = argv[1];
+  const std::string output_path = source_name + ".token";
 
   try {
-    lexer::CharMachine reader(filepath);
-    lexer::Lexer lexer(reader);
-    bool lexer_error = false;
+    std::ifstream stream(source_name);
+    if (!stream.is_open()) {
+      throw std::runtime_error("arionin: error: cannot open '" + source_name +
+                               "': " + std::strerror(errno));
+    }
 
-    try {
-      lexer.process();
-    } catch (const std::vector<InvalidTokenException>& err) {
-      lexer_error = true;
-      for (const auto& e : err) {
-        std::cerr << e.what() << "\n";
-      }
+    io::CharMachine reader(stream, source_name);
+    diag::Diagnoser diagnoser(source_name, reader.lines());
+    lexer::Lexer lexer(reader, diagnoser);
+
+    lexer.process();
+
+    if (diagnoser.has_error()) {
+      std::cerr << diagnoser;
+      return 1;
     }
 
     std::ofstream output_file(output_path);
@@ -42,11 +49,18 @@ int main(int argc, char* argv[]) {
       output_file << token << '\n';
     }
 
-    return lexer_error ? 1 : 0;
+    parser::Parser parser(source_name, tokens, diagnoser);
+    parser.parse();
 
-  } catch (const ArionException& e) {
-    std::cerr << e.what() << "\n";
-    return 1;
+    if (diagnoser.has_error()) {
+      std::cerr << diagnoser;
+      return 1;
+    }
+
+    parser.program().print();
+
+    return 0;
+
   } catch (const std::exception& e) {
     std::cerr << e.what() << "\n";
     return 1;

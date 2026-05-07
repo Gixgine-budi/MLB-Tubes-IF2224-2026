@@ -1,8 +1,10 @@
-#include "state.hpp"
+#include "lexer/state.hpp"
 
-#include "alphabet.hpp"
-#include "lexer.hpp"
-#include "token.hpp"
+#include "diagnoser/diagnoser.hpp"
+#include "diagnoser/diagnostic.hpp"
+#include "lexer/alphabet.hpp"
+#include "lexer/lexer.hpp"
+#include "lexer/token.hpp"
 
 namespace lexer {
 
@@ -46,7 +48,7 @@ StateOrToken Lexer::parse_symbol(char c, InvalidType& invalid) {
       return State::IN_CURLY;
     case '}':
       consume('}');
-      invalid = InvalidType::UNEXCPECTED_SYMBOL;
+      invalid = InvalidType::UnexpectedSymbol;
       return TokenType::INVALID;
     case '.':
       consume('.');
@@ -65,7 +67,7 @@ StateOrToken Lexer::parse_symbol(char c, InvalidType& invalid) {
       return State::IN_QUOTE;
     default:
       consume(c);
-      invalid = InvalidType::ILLEGAL_SYMBOL;
+      invalid = InvalidType::IllegalSymbol;
       return TokenType::INVALID;
   };
 }
@@ -124,7 +126,7 @@ bool Lexer::handle_eof() {
     case State::IN_QUOTE:
     case State::IN_CHARCON:
     case State::IN_STRING:
-      buffer_.invalid_type = InvalidType::MISSING_QUOTE;
+      buffer_.invalid = InvalidType::MissingQuote;
       buffer_.type = TokenType::INVALID;
       tokens_.emplace_back(buffer_);
       reset();
@@ -144,7 +146,7 @@ bool Lexer::handle_eof() {
       return true;
 
     case State::IN_CURLY:
-      buffer_.invalid_type = InvalidType::MISSING_CURLY;
+      buffer_.invalid = InvalidType::MissingCurly;
       buffer_.type = TokenType::INVALID;
       tokens_.emplace_back(buffer_);
       reset();
@@ -157,14 +159,14 @@ bool Lexer::handle_eof() {
       return true;
 
     case State::IN_COMMENT_PARENT:
-      buffer_.invalid_type = InvalidType::MISSING_ASTERIK;
+      buffer_.invalid = InvalidType::MissingAsterick;
       buffer_.type = TokenType::INVALID;
       tokens_.emplace_back(buffer_);
       reset();
       return true;
 
     case State::END_COMMENT_PARENT:
-      buffer_.invalid_type = InvalidType::MISSING_PARENT;
+      buffer_.invalid = InvalidType::MissingParent;
       buffer_.type = TokenType::INVALID;
       tokens_.emplace_back(buffer_);
       reset();
@@ -198,7 +200,7 @@ bool Lexer::handle_eof() {
       return true;
 
     case State::IN_EQUAL:
-      buffer_.invalid_type = InvalidType::INVALID_COMBINATION;
+      buffer_.invalid = InvalidType::InvalidCombination;
       buffer_.type = TokenType::INVALID;
       tokens_.emplace_back(buffer_);
       reset();
@@ -233,7 +235,7 @@ bool Lexer::transition() {
   if (c == '\0') return handle_eof();
 
   StateOrToken next;
-  InvalidType invalid = InvalidType::NOT_INVALID;
+  InvalidType invalid = InvalidType::NotInvalid;
 
   switch (current_) {
     case State::START: {
@@ -262,7 +264,7 @@ bool Lexer::transition() {
         // Simbol tidak dikenal, otomatis invalid (illegal symbil)
         consume(c);
         next = TokenType::INVALID;
-        invalid = InvalidType::ILLEGAL_SYMBOL;
+        invalid = InvalidType::IllegalSymbol;
       }
       break;
     }
@@ -273,7 +275,7 @@ bool Lexer::transition() {
       } else if (c == '\n') {            // Invalid, tidak boleh newline
         reader_.advance();               // Tidak di consume, langsung advance
         next = TokenType::INVALID;
-        invalid = InvalidType::MISSING_QUOTE;
+        invalid = InvalidType::MissingQuote;
       } else {
         consume(c);
         next = State::IN_CHARCON;  // Alfabet selain ' dan \n
@@ -285,6 +287,7 @@ bool Lexer::transition() {
         consume(c);
         next = State::IN_CHARCON;  // Ada 3 ('''), 1 pembuka, 2 dianggap (')
       } else {
+        consume('\'');
         next = TokenType::STRING;  // Jangan consume, output ('') empty string
       }
       break;
@@ -314,7 +317,7 @@ bool Lexer::transition() {
         next = State::END_STRING;  // Kondisi ' genap (menutup string)
       } else if (c == '\n') {
         reader_.advance();  // Abaikan whitespace
-        invalid = InvalidType::MISSING_QUOTE;
+        invalid = InvalidType::MissingQuote;
         next = TokenType::INVALID;  // Tidak boleh newline sebelum ditutup
       } else {
         consume(c);
@@ -427,7 +430,7 @@ bool Lexer::transition() {
         next = TokenType::EQL;
       } else {
         // = tidak bisa berdiri sendiri
-        invalid = InvalidType::INVALID_COMBINATION;
+        invalid = InvalidType::InvalidCombination;
         next = TokenType::INVALID;
       }
       break;
@@ -461,7 +464,7 @@ bool Lexer::transition() {
     }
     default: {
       // default error
-      invalid = InvalidType::UNEXCPECTED_SYMBOL;
+      invalid = InvalidType::UnexpectedSymbol;
       next = TokenType::INVALID;
       break;
     }
@@ -473,8 +476,18 @@ bool Lexer::transition() {
   } else if (std::holds_alternative<TokenType>(next)) {
     TokenType type = std::get<TokenType>(next);
     buffer_.type = type;
-    buffer_.invalid_type =
-        (type == TokenType::INVALID) ? invalid : InvalidType::NOT_INVALID;
+    if (type == TokenType::INVALID) {
+      buffer_.invalid = invalid;
+      auto error_hint = buffer_.error_hint();
+      diagnoser_.report(
+          diag::Diagnostic{diag::Phase::LEXER, diag::Level::ERROR,
+                           diag::Source{buffer_.line_num, buffer_.col_num,
+                                        (int)buffer_.lexeme.size()},
+                           error_hint.first, error_hint.second});
+    } else {
+      buffer_.invalid = InvalidType::NotInvalid;
+    }
+
     tokens_.emplace_back(buffer_);  // emit token
     reset();
     return true;
@@ -499,7 +512,7 @@ bool Lexer::handle_in_period_intcon() {
 
   // emit . dan reset lembali
   tokens_.emplace_back(
-      Token{TokenType::PERIOD, InvalidType::NOT_INVALID, "", line, col});
+      Token{TokenType::PERIOD, InvalidType::NotInvalid, "", line, col});
 
   reset();
   return true;

@@ -2,6 +2,8 @@
 
 #include <ostream>
 #include <string>
+#include <string_view>
+#include <utility>
 
 namespace lexer {
 
@@ -66,14 +68,14 @@ enum class TokenType {
 };
 
 enum class InvalidType : int {
-  NOT_INVALID = 0,
-  ILLEGAL_SYMBOL,
-  MISSING_QUOTE,
-  MISSING_CURLY,
-  MISSING_PARENT,
-  MISSING_ASTERIK,
-  INVALID_COMBINATION,
-  UNEXCPECTED_SYMBOL
+  NotInvalid = 0,
+  IllegalSymbol,
+  MissingQuote,
+  MissingCurly,
+  MissingParent,
+  MissingAsterick,
+  InvalidCombination,
+  UnexpectedSymbol
 };
 
 /**
@@ -82,11 +84,11 @@ enum class InvalidType : int {
  *
  */
 struct Token {
-  TokenType type;            ///< Type of the token
-  InvalidType invalid_type;  ///< Type of invalid token if its invalid
-  std::string lexeme;        ///< Literal
-  int line_num;              ///< Line number started
-  int col_num;               ///< Column number started
+  TokenType type;       ///< Type of the token
+  InvalidType invalid;  ///< Type of the invalid token
+  std::string lexeme;   ///< Literal
+  int line_num;         ///< Line number started
+  int col_num;          ///< Column number started
 
   /**
    * @brief Print token in format "type (lexeme)" or "type"
@@ -109,7 +111,13 @@ struct Token {
    *
    * @return const std::string of the error message
    */
-  const std::string error_message() const;
+  const std::pair<std::string, std::string> error_hint() const;
 };
+
+/**
+ * @brief Returns a human-readable display name for a token type, used in
+ * parser error messages (e.g. SEMICOLON → "';'" , IDENT → "an identifier").
+ */
+std::string_view toString(TokenType t);
 
 }  // namespace lexer

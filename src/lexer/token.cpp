@@ -1,25 +1,27 @@
-#include "token.hpp"
+#include "lexer/token.hpp"
 
 #include <ostream>
+#include <string>
+#include <utility>
 
 namespace lexer {
 
 std::ostream& operator<<(std::ostream& os, const Token& t) {
   switch (t.type) {
     case TokenType::INVALID:
-      os << "unknown (" << t.lexeme << ")";
+      os << "unknown(" << t.lexeme << ")";
       break;
     case TokenType::INTCON:
-      os << "intcon (" << t.lexeme << ")";
+      os << "intcon(" << t.lexeme << ")";
       break;
     case TokenType::REALCON:
-      os << "realcon (" << t.lexeme << ")";
+      os << "realcon(" << t.lexeme << ")";
       break;
     case TokenType::CHARCON:
-      os << "charcon (" << t.lexeme << ")";
+      os << "charcon(" << t.lexeme << ")";
       break;
     case TokenType::STRING:
-      os << "string (" << t.lexeme << ")";
+      os << "string(" << t.lexeme << ")";
       break;
     case TokenType::NOTSY:
       os << "notsy";
@@ -118,7 +120,7 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
       os << "programsy";
       break;
     case TokenType::IDENT:
-      os << "ident (" << t.lexeme << ")";
+      os << "ident(" << t.lexeme << ")";
       break;
     case TokenType::BEGINSY:
       os << "beginsy";
@@ -163,52 +165,161 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
       os << "thensy";
       break;
     case TokenType::COMMENT:
-      os << "comment (" << t.lexeme << ")";
+      os << "comment(" << t.lexeme << ")";
       break;
   }
   return os;
 }
 
-const std::string Token::error_message() const {
-  switch (invalid_type) {
-    case InvalidType::NOT_INVALID:
-      return "";
-    case InvalidType::ILLEGAL_SYMBOL:
-      return std::string("found illegal symbol \'").append(lexeme).append("\'");
-    case InvalidType::MISSING_QUOTE:
-      return std::string("missing closing quote \' at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_CURLY:
-      return std::string("missing closing } for comment at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_PARENT:
-      return std::string(" incomplete closing, missing ) for comment at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_ASTERIK:
-      return std::string("missing closing *) for comment for at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::INVALID_COMBINATION:
-      return std::string("invalid symbol combination \'")
-          .append(lexeme)
-          .append("\'");
-    case InvalidType::UNEXCPECTED_SYMBOL:
-      return std::string("found unexpected symbol \'")
-          .append(lexeme)
-          .append("\'");
+std::string_view toString(TokenType t) {
+  switch (t) {
+    case TokenType::INVALID:
+      return "an unknown token";
+    case TokenType::INTCON:
+      return "an integer constant";
+    case TokenType::REALCON:
+      return "a real constant";
+    case TokenType::CHARCON:
+      return "a character constant";
+    case TokenType::STRING:
+      return "a string literal";
+    case TokenType::NOTSY:
+      return "'not'";
+    case TokenType::PLUS:
+      return "'+'";
+    case TokenType::MINUS:
+      return "'-'";
+    case TokenType::TIMES:
+      return "'*'";
+    case TokenType::IDIV:
+      return "'div'";
+    case TokenType::RDIV:
+      return "'/'";
+    case TokenType::IMOD:
+      return "'mod'";
+    case TokenType::ANDSY:
+      return "'and'";
+    case TokenType::ORSY:
+      return "'or'";
+    case TokenType::EQL:
+      return "'='";
+    case TokenType::NEQ:
+      return "'<>'";
+    case TokenType::GTR:
+      return "'>'";
+    case TokenType::GEQ:
+      return "'>='";
+    case TokenType::LSS:
+      return "'<'";
+    case TokenType::LEQ:
+      return "'<='";
+    case TokenType::LPARENT:
+      return "'('";
+    case TokenType::RPARENT:
+      return "')'";
+    case TokenType::LBRACK:
+      return "'['";
+    case TokenType::RBRACK:
+      return "']'";
+    case TokenType::COMMA:
+      return "','";
+    case TokenType::SEMICOLON:
+      return "';'";
+    case TokenType::PERIOD:
+      return "'.'";
+    case TokenType::COLON:
+      return "':'";
+    case TokenType::BECOMES:
+      return "':='";
+    case TokenType::CONSTSY:
+      return "'const'";
+    case TokenType::TYPESY:
+      return "'type'";
+    case TokenType::VARSY:
+      return "'var'";
+    case TokenType::FUNCTIONSY:
+      return "'function'";
+    case TokenType::PROCEDURESY:
+      return "'procedure'";
+    case TokenType::ARRAYSY:
+      return "'array'";
+    case TokenType::RECORDSY:
+      return "'record'";
+    case TokenType::PROGRAMSY:
+      return "'program'";
+    case TokenType::IDENT:
+      return "an identifier";
+    case TokenType::BEGINSY:
+      return "'begin'";
+    case TokenType::IFSY:
+      return "'if'";
+    case TokenType::CASESY:
+      return "'case'";
+    case TokenType::REPEATSY:
+      return "'repeat'";
+    case TokenType::WHILESY:
+      return "'while'";
+    case TokenType::FORSY:
+      return "'for'";
+    case TokenType::ENDSY:
+      return "'end'";
+    case TokenType::ELSESY:
+      return "'else'";
+    case TokenType::UNTILSY:
+      return "'until'";
+    case TokenType::OFSY:
+      return "'of'";
+    case TokenType::DOSY:
+      return "'do'";
+    case TokenType::TOSY:
+      return "'to'";
+    case TokenType::DOWNTOSY:
+      return "'downto'";
+    case TokenType::THENSY:
+      return "'then'";
+    case TokenType::COMMENT:
+      return "a comment";
   }
-  return "";
+  return "an unknown token";
+}
+
+const std::pair<std::string, std::string> Token::error_hint() const {
+  switch (invalid) {
+    case InvalidType::NotInvalid:
+      return std::make_pair(std::string(""), "");
+    case InvalidType::IllegalSymbol:
+      return std::make_pair(std::string("character \'")
+                                .append(lexeme)
+                                .append("\' is not part of the language"),
+                            "");
+    case InvalidType::MissingQuote:
+      return std::make_pair(
+          std::string("string or char literal opened with \' but never closed"),
+          "add closing \' before the end of line");
+    case InvalidType::MissingCurly:
+      return std::make_pair(
+          std::string("block comment opened with { but never closed"),
+          "add closing } somewhere");
+    case InvalidType::MissingParent:
+      return std::make_pair(
+          std::string("block comment opened with (* not completely closed"),
+          "add closing ) after *");
+    case InvalidType::MissingAsterick:
+      return std::make_pair(
+          std::string("block comment opened with (* but never closed"),
+          "add closing *) somewhere");
+    case InvalidType::InvalidCombination:
+      return std::make_pair(std::string("symbol combination \'")
+                                .append(lexeme)
+                                .append("\' does not match any operator"),
+                            "");
+    case InvalidType::UnexpectedSymbol:
+      return std::make_pair(std::string("unexpected symbol \'")
+                                .append(lexeme)
+                                .append("\' encountered"),
+                            "");
+  }
+  return std::make_pair(std::string("unknown error"), "");
 }
 
 }  // namespace lexer
