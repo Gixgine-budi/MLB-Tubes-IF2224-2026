@@ -105,11 +105,14 @@ std::ostream& operator<<(std::ostream& os, const ParseNode& node) {
   return os;
 }
 
-void ParseNode::print(bool isLast, int depth) const {
-  std::string indent(depth * 2, ' ');
-  std::cout << indent << (isLast ? "└─" : "├─") << *this << "\n";
+void ParseNode::print() const { printRecursive("", false); }
+
+void ParseNode::printRecursive(const std::string& prefix, bool isLast) const {
+  std::cout << prefix << (isLast ? "└─ " : "├─ ") << *this << "\n";
+
+  const std::string child_prefix = prefix + (isLast ? "  " : "│ ");
   for (size_t i = 0; i < children_.size(); ++i) {
-    children_[i]->print(i == children_.size() - 1, depth + 1);
+    children_[i]->printRecursive(child_prefix, i == children_.size() - 1);
   }
 }
 

@@ -7,6 +7,7 @@
 #include "arion_exceptions.hpp"
 #include "lexer/char_machine.hpp"
 #include "lexer/lexer.hpp"
+#include "parser/parser.hpp"
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -41,6 +42,11 @@ int main(int argc, char* argv[]) {
     for (const auto& token : tokens) {
       output_file << token << '\n';
     }
+
+    parser::Parser parser(filepath, tokens);
+    parser.parse();
+
+    parser.program().print();
 
     return lexer_error ? 1 : 0;
 
