@@ -287,6 +287,7 @@ bool Lexer::transition() {
         consume(c);
         next = State::IN_CHARCON;  // Ada 3 ('''), 1 pembuka, 2 dianggap (')
       } else {
+        consume('\'');
         next = TokenType::STRING;  // Jangan consume, output ('') empty string
       }
       break;
