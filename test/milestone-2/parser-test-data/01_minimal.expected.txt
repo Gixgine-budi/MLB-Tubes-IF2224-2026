@@ -1,0 +1,11 @@
+├─ Program
+│ ├─ ProgramHeader
+│ │ ├─ programsy
+│ │ ├─ ident(Minimal)
+│ │ └─ semicolon
+│ ├─ DeclarationPart
+│ ├─ CompoundStatement
+│ │ ├─ beginsy
+│ │ ├─ StatementList
+│ │ └─ endsy
+│ └─ period

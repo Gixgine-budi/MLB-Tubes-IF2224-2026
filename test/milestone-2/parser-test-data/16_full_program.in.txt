@@ -1,0 +1,45 @@
+program FullProgram;
+const
+    N == 5;
+type
+    Status == (active, inactive, pending);
+    Range5 == 1..5;
+var
+    i, j, tmp: integer;
+    arr: array[1..5] of integer;
+    done: boolean;
+
+function Max(a, b: integer): integer;
+begin
+    if a > b then
+        Max := a
+    else
+        Max := b;
+end;
+
+procedure BubblePass(n: integer);
+var
+    k, k2: integer;
+begin
+    for k := 1 to n do
+    begin
+        k2 := k + 1;
+        if arr[k] > arr[k2] then
+            tmp := arr[k];
+    end;
+end;
+
+begin
+    for i := 1 to N do
+    begin
+        arr[i] := N - i + 1;
+    end;
+    j := N - 1;
+    done := false;
+    while j > 0 do
+    begin
+        BubblePass(j);
+        j := j - 1;
+    end;
+    i := Max(arr[1], arr[N]);
+end.

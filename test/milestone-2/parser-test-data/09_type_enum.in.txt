@@ -1,0 +1,9 @@
+program TypeEnum;
+type
+    Color == (red, green, blue);
+    Direction == (north, south, east, west);
+var
+    c: Color;
+begin
+    c := red;
+end.

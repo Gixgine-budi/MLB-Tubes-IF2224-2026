@@ -1,0 +1,71 @@
+├─ Program
+│ ├─ ProgramHeader
+│ │ ├─ programsy
+│ │ ├─ ident(RecordType)
+│ │ └─ semicolon
+│ ├─ DeclarationPart
+│ │ ├─ TypeDeclaration
+│ │ │ ├─ typesy
+│ │ │ ├─ ident(Point)
+│ │ │ ├─ eql
+│ │ │ ├─ Type
+│ │ │ │ └─ RecordType
+│ │ │ │   ├─ recordsy
+│ │ │ │   ├─ FieldList
+│ │ │ │   │ ├─ FieldPart
+│ │ │ │   │ │ ├─ IdentifierList
+│ │ │ │   │ │ │ └─ ident(x)
+│ │ │ │   │ │ ├─ colon
+│ │ │ │   │ │ └─ Type
+│ │ │ │   │ │   └─ ident(integer)
+│ │ │ │   │ ├─ semicolon
+│ │ │ │   │ ├─ FieldPart
+│ │ │ │   │ │ ├─ IdentifierList
+│ │ │ │   │ │ │ └─ ident(y)
+│ │ │ │   │ │ ├─ colon
+│ │ │ │   │ │ └─ Type
+│ │ │ │   │ │   └─ ident(integer)
+│ │ │ │   │ └─ semicolon
+│ │ │ │   └─ endsy
+│ │ │ └─ semicolon
+│ │ └─ VarDeclaration
+│ │   ├─ varsy
+│ │   ├─ IdentifierList
+│ │   │ └─ ident(p)
+│ │   ├─ colon
+│ │   ├─ Type
+│ │   │ └─ ident(Point)
+│ │   └─ semicolon
+│ ├─ CompoundStatement
+│ │ ├─ beginsy
+│ │ ├─ StatementList
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ ├─ ident(p)
+│ │ │ │   │ └─ ComponentVariable
+│ │ │ │   │   ├─ period
+│ │ │ │   │   └─ ident(x)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         └─ Factor
+│ │ │ │           └─ intcon(3)
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ ├─ ident(p)
+│ │ │ │   │ └─ ComponentVariable
+│ │ │ │   │   ├─ period
+│ │ │ │   │   └─ ident(y)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         └─ Factor
+│ │ │ │           └─ intcon(4)
+│ │ │ └─ semicolon
+│ │ └─ endsy
+│ └─ period

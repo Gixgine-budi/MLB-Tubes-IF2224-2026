@@ -1,0 +1,168 @@
+├─ Program
+│ ├─ ProgramHeader
+│ │ ├─ programsy
+│ │ ├─ ident(NestedExpr)
+│ │ └─ semicolon
+│ ├─ DeclarationPart
+│ │ └─ VarDeclaration
+│ │   ├─ varsy
+│ │   ├─ IdentifierList
+│ │   │ ├─ ident(a)
+│ │   │ ├─ comma
+│ │   │ ├─ ident(b)
+│ │   │ ├─ comma
+│ │   │ └─ ident(c)
+│ │   ├─ colon
+│ │   ├─ Type
+│ │   │ └─ ident(integer)
+│ │   ├─ semicolon
+│ │   ├─ IdentifierList
+│ │   │ └─ ident(flag)
+│ │   ├─ colon
+│ │   ├─ Type
+│ │   │ └─ ident(boolean)
+│ │   └─ semicolon
+│ ├─ CompoundStatement
+│ │ ├─ beginsy
+│ │ ├─ StatementList
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(a)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         ├─ Factor
+│ │ │ │         │ ├─ lparent
+│ │ │ │         │ ├─ Expression
+│ │ │ │         │ │ └─ SimpleExpression
+│ │ │ │         │ │   ├─ Term
+│ │ │ │         │ │   │ └─ Factor
+│ │ │ │         │ │   │   └─ intcon(3)
+│ │ │ │         │ │   ├─ AdditiveOperator
+│ │ │ │         │ │   │ └─ plus
+│ │ │ │         │ │   └─ Term
+│ │ │ │         │ │     └─ Factor
+│ │ │ │         │ │       └─ intcon(4)
+│ │ │ │         │ └─ rparent
+│ │ │ │         ├─ MultiplicativeOperator
+│ │ │ │         │ └─ times
+│ │ │ │         └─ Factor
+│ │ │ │           └─ intcon(2)
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(b)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         ├─ Factor
+│ │ │ │         │ └─ Variable
+│ │ │ │         │   └─ ident(a)
+│ │ │ │         ├─ MultiplicativeOperator
+│ │ │ │         │ └─ idiv
+│ │ │ │         ├─ Factor
+│ │ │ │         │ └─ intcon(3)
+│ │ │ │         ├─ MultiplicativeOperator
+│ │ │ │         │ └─ imod
+│ │ │ │         └─ Factor
+│ │ │ │           └─ intcon(2)
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(c)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       ├─ minus
+│ │ │ │       ├─ Term
+│ │ │ │       │ └─ Factor
+│ │ │ │       │   └─ Variable
+│ │ │ │       │     └─ ident(a)
+│ │ │ │       ├─ AdditiveOperator
+│ │ │ │       │ └─ plus
+│ │ │ │       └─ Term
+│ │ │ │         └─ Factor
+│ │ │ │           └─ Variable
+│ │ │ │             └─ ident(b)
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(flag)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         ├─ Factor
+│ │ │ │         │ ├─ lparent
+│ │ │ │         │ ├─ Expression
+│ │ │ │         │ │ ├─ SimpleExpression
+│ │ │ │         │ │ │ └─ Term
+│ │ │ │         │ │ │   └─ Factor
+│ │ │ │         │ │ │     └─ Variable
+│ │ │ │         │ │ │       └─ ident(a)
+│ │ │ │         │ │ ├─ RelationalOperator
+│ │ │ │         │ │ │ └─ gtr
+│ │ │ │         │ │ └─ SimpleExpression
+│ │ │ │         │ │   └─ Term
+│ │ │ │         │ │     └─ Factor
+│ │ │ │         │ │       └─ Variable
+│ │ │ │         │ │         └─ ident(b)
+│ │ │ │         │ └─ rparent
+│ │ │ │         ├─ MultiplicativeOperator
+│ │ │ │         │ └─ andsy
+│ │ │ │         └─ Factor
+│ │ │ │           ├─ lparent
+│ │ │ │           ├─ Expression
+│ │ │ │           │ ├─ SimpleExpression
+│ │ │ │           │ │ └─ Term
+│ │ │ │           │ │   └─ Factor
+│ │ │ │           │ │     └─ Variable
+│ │ │ │           │ │       └─ ident(b)
+│ │ │ │           │ ├─ RelationalOperator
+│ │ │ │           │ │ └─ neq
+│ │ │ │           │ └─ SimpleExpression
+│ │ │ │           │   └─ Term
+│ │ │ │           │     └─ Factor
+│ │ │ │           │       └─ intcon(0)
+│ │ │ │           └─ rparent
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(flag)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       ├─ Term
+│ │ │ │       │ └─ Factor
+│ │ │ │       │   ├─ notsy
+│ │ │ │       │   └─ Factor
+│ │ │ │       │     └─ Variable
+│ │ │ │       │       └─ ident(flag)
+│ │ │ │       ├─ AdditiveOperator
+│ │ │ │       │ └─ orsy
+│ │ │ │       └─ Term
+│ │ │ │         └─ Factor
+│ │ │ │           ├─ lparent
+│ │ │ │           ├─ Expression
+│ │ │ │           │ ├─ SimpleExpression
+│ │ │ │           │ │ └─ Term
+│ │ │ │           │ │   └─ Factor
+│ │ │ │           │ │     └─ Variable
+│ │ │ │           │ │       └─ ident(c)
+│ │ │ │           │ ├─ RelationalOperator
+│ │ │ │           │ │ └─ leq
+│ │ │ │           │ └─ SimpleExpression
+│ │ │ │           │   └─ Term
+│ │ │ │           │     └─ Factor
+│ │ │ │           │       └─ intcon(10)
+│ │ │ │           └─ rparent
+│ │ │ └─ semicolon
+│ │ └─ endsy
+│ └─ period

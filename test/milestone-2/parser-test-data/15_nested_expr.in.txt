@@ -1,0 +1,11 @@
+program NestedExpr;
+var
+    a, b, c: integer;
+    flag: boolean;
+begin
+    a := (3 + 4) * 2;
+    b := a div 3 mod 2;
+    c := -a + b;
+    flag := (a > b) and (b <> 0);
+    flag := not flag or (c <= 10);
+end.

@@ -1,0 +1,8 @@
+program ConstDecl;
+const
+    MaxSize == 100;
+    Pi == 3.14159;
+    Greeting == 'hello';
+    Neg == -1;
+begin
+end.

@@ -1,0 +1,10 @@
+program IfElse;
+var
+    n: integer;
+begin
+    n := 7;
+    if n > 5 then
+        n := n - 1
+    else
+        n := n + 1;
+end.

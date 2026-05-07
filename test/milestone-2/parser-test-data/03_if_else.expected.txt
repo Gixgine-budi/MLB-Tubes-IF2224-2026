@@ -1,0 +1,80 @@
+├─ Program
+│ ├─ ProgramHeader
+│ │ ├─ programsy
+│ │ ├─ ident(IfElse)
+│ │ └─ semicolon
+│ ├─ DeclarationPart
+│ │ └─ VarDeclaration
+│ │   ├─ varsy
+│ │   ├─ IdentifierList
+│ │   │ └─ ident(n)
+│ │   ├─ colon
+│ │   ├─ Type
+│ │   │ └─ ident(integer)
+│ │   └─ semicolon
+│ ├─ CompoundStatement
+│ │ ├─ beginsy
+│ │ ├─ StatementList
+│ │ │ ├─ Statement
+│ │ │ │ └─ AssignmentStatement
+│ │ │ │   ├─ Variable
+│ │ │ │   │ └─ ident(n)
+│ │ │ │   ├─ becomes
+│ │ │ │   └─ Expression
+│ │ │ │     └─ SimpleExpression
+│ │ │ │       └─ Term
+│ │ │ │         └─ Factor
+│ │ │ │           └─ intcon(7)
+│ │ │ ├─ semicolon
+│ │ │ ├─ Statement
+│ │ │ │ └─ IfStatement
+│ │ │ │   ├─ ifsy
+│ │ │ │   ├─ Expression
+│ │ │ │   │ ├─ SimpleExpression
+│ │ │ │   │ │ └─ Term
+│ │ │ │   │ │   └─ Factor
+│ │ │ │   │ │     └─ Variable
+│ │ │ │   │ │       └─ ident(n)
+│ │ │ │   │ ├─ RelationalOperator
+│ │ │ │   │ │ └─ gtr
+│ │ │ │   │ └─ SimpleExpression
+│ │ │ │   │   └─ Term
+│ │ │ │   │     └─ Factor
+│ │ │ │   │       └─ intcon(5)
+│ │ │ │   ├─ thensy
+│ │ │ │   ├─ Statement
+│ │ │ │   │ └─ AssignmentStatement
+│ │ │ │   │   ├─ Variable
+│ │ │ │   │   │ └─ ident(n)
+│ │ │ │   │   ├─ becomes
+│ │ │ │   │   └─ Expression
+│ │ │ │   │     └─ SimpleExpression
+│ │ │ │   │       ├─ Term
+│ │ │ │   │       │ └─ Factor
+│ │ │ │   │       │   └─ Variable
+│ │ │ │   │       │     └─ ident(n)
+│ │ │ │   │       ├─ AdditiveOperator
+│ │ │ │   │       │ └─ minus
+│ │ │ │   │       └─ Term
+│ │ │ │   │         └─ Factor
+│ │ │ │   │           └─ intcon(1)
+│ │ │ │   ├─ elsesy
+│ │ │ │   └─ Statement
+│ │ │ │     └─ AssignmentStatement
+│ │ │ │       ├─ Variable
+│ │ │ │       │ └─ ident(n)
+│ │ │ │       ├─ becomes
+│ │ │ │       └─ Expression
+│ │ │ │         └─ SimpleExpression
+│ │ │ │           ├─ Term
+│ │ │ │           │ └─ Factor
+│ │ │ │           │   └─ Variable
+│ │ │ │           │     └─ ident(n)
+│ │ │ │           ├─ AdditiveOperator
+│ │ │ │           │ └─ plus
+│ │ │ │           └─ Term
+│ │ │ │             └─ Factor
+│ │ │ │               └─ intcon(1)
+│ │ │ └─ semicolon
+│ │ └─ endsy
+│ └─ period

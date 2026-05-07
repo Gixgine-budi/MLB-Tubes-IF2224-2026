@@ -1,0 +1,9 @@
+program RepeatUntil;
+var
+    n: integer;
+begin
+    n := 1;
+    repeat
+        n := n * 2;
+    until n > 100;
+end.

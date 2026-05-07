@@ -1,0 +1,9 @@
+program TypeRange;
+type
+    Digit == 0..9;
+    UpperAlpha == 'A'..'Z';
+var
+    d: Digit;
+begin
+    d := 5;
+end.
