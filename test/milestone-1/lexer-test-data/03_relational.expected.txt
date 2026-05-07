@@ -1,13 +1,13 @@
-ident (a)
+ident(a)
 eql
-ident (b)
+ident(b)
 neq
-ident (c)
+ident(c)
 gtr
-ident (d)
+ident(d)
 geq
-ident (e)
+ident(e)
 lss
-ident (f)
+ident(f)
 leq
-ident (g)
+ident(g)

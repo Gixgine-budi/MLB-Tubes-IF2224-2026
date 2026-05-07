@@ -1,18 +1,18 @@
-ident (x)
+ident(x)
 becomes
-intcon (1)
+intcon(1)
 semicolon
-ident (y)
+ident(y)
 becomes
 lparent
-ident (a)
+ident(a)
 geq
-ident (b)
+ident(b)
 rparent
 andsy
 lparent
-ident (c)
+ident(c)
 neq
-ident (d)
+ident(d)
 rparent
 semicolon

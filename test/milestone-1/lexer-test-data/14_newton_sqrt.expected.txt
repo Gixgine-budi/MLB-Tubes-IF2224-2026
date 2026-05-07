@@ -1,49 +1,49 @@
 programsy
-ident (NewtonSqrt)
+ident(NewtonSqrt)
 semicolon
 varsy
-ident (x)
+ident(x)
 comma
-ident (g)
+ident(g)
 comma
-ident (eps)
+ident(eps)
 colon
-ident (real)
+ident(real)
 semicolon
 beginsy
-ident (x)
+ident(x)
 becomes
-realcon (2.0)
+realcon(2.0)
 semicolon
-ident (g)
+ident(g)
 becomes
-realcon (1.0)
+realcon(1.0)
 semicolon
-ident (eps)
+ident(eps)
 becomes
-realcon (0.0001)
+realcon(0.0001)
 semicolon
 whilesy
-ident (g)
+ident(g)
 times
-ident (g)
+ident(g)
 minus
-ident (x)
+ident(x)
 gtr
-ident (eps)
+ident(eps)
 dosy
 beginsy
-ident (g)
+ident(g)
 becomes
 lparent
-ident (g)
+ident(g)
 plus
-ident (x)
+ident(x)
 rdiv
-ident (g)
+ident(g)
 rparent
 rdiv
-realcon (2.0)
+realcon(2.0)
 semicolon
 endsy
 semicolon

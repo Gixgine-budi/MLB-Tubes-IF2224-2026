@@ -1,3 +1,4 @@
-ident (start)
+ident(start)
 semicolon
-unknown({ this brace comment is never closed before end of file)
+unknown({ this brace comment is never closed before end of file
+)

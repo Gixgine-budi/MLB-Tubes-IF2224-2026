@@ -1,7 +1,7 @@
-ident (x)
+ident(x)
 becomes
 unknown('no closing quote)
-ident (y)
+ident(y)
 becomes
-intcon (2)
+intcon(2)
 semicolon

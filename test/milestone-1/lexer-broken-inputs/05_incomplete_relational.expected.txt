@@ -1,8 +1,8 @@
-ident (a)
+ident(a)
 lss
 gtr
-ident (b)
+ident(b)
 semicolon
-ident (c)
+ident(c)
 lss
 semicolon

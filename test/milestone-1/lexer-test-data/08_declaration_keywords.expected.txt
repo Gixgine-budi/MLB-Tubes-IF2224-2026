@@ -1,32 +1,32 @@
 programsy
-ident (P)
+ident(P)
 semicolon
 constsy
-ident (c)
+ident(c)
 colon
-ident (integer)
+ident(integer)
 semicolon
 typesy
-ident (T)
+ident(T)
 colon
-ident (Char)
+ident(Char)
 semicolon
 varsy
-ident (v)
+ident(v)
 colon
-ident (String)
+ident(String)
 semicolon
 functionsy
-ident (F)
+ident(F)
 semicolon
 proceduresy
-ident (G)
+ident(G)
 semicolon
 arraysy
-ident (A)
+ident(A)
 semicolon
 recordsy
-ident (R)
+ident(R)
 semicolon
 beginsy
 endsy

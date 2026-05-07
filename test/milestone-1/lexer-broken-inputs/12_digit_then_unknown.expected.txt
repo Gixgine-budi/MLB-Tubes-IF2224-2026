@@ -1,4 +1,4 @@
-intcon (42)
+intcon(42)
 unknown($)
-intcon (7)
+intcon(7)
 semicolon

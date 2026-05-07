@@ -1,8 +1,11 @@
+comment( line comment to )
 programsy
-ident (P)
+ident(P)
 semicolon
+comment( star paren
+   multiline )
 varsy
-ident (x)
+ident(x)
 colon
-ident (integer)
+ident(integer)
 semicolon

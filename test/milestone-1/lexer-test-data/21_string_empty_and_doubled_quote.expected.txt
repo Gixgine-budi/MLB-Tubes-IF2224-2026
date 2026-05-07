@@ -1,0 +1,2 @@
+string('')
+string('this is People''s republic of China')

@@ -1,4 +1,5 @@
-ident (a)
+ident(a)
 semicolon
-ident (b)
+comment( this is brace style *) still comment until brace closes )
+ident(b)
 semicolon

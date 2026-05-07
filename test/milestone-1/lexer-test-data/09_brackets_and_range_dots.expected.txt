@@ -1,14 +1,14 @@
-ident (arr)
+ident(arr)
 lbrack
-intcon (1)
+intcon(1)
 period
 period
-intcon (10)
+intcon(10)
 rbrack
 becomes
 lparent
-ident (a)
+ident(a)
 comma
-ident (b)
+ident(b)
 rparent
 semicolon

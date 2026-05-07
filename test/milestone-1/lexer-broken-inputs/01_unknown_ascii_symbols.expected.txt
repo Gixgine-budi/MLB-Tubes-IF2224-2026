@@ -1,6 +1,6 @@
-ident (x)
+ident(x)
 becomes
-intcon (1)
+intcon(1)
 semicolon
 unknown($)
 unknown(@)

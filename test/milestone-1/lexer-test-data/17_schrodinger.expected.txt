@@ -1,28 +1,28 @@
 programsy
-ident (Schrodinger)
+ident(Schrodinger)
 semicolon
 varsy
-ident (cat)
+ident(cat)
 colon
-ident (integer)
+ident(integer)
 semicolon
 beginsy
-ident (cat)
+ident(cat)
 becomes
-intcon (1)
+intcon(1)
 semicolon
 ifsy
-ident (cat)
+ident(cat)
 eql
-intcon (1)
+intcon(1)
 thensy
-ident (cat)
+ident(cat)
 becomes
-intcon (0)
+intcon(0)
 elsesy
-ident (cat)
+ident(cat)
 becomes
-intcon (1)
+intcon(1)
 semicolon
 endsy
 period

@@ -1,62 +1,62 @@
 programsy
-ident (FastInvSqrt)
+ident(FastInvSqrt)
 semicolon
 varsy
-ident (x)
+ident(x)
 comma
-ident (y)
+ident(y)
 comma
-ident (threehalfs)
+ident(threehalfs)
 colon
-ident (real)
+ident(real)
 semicolon
 beginsy
-ident (x)
+ident(x)
 becomes
-realcon (2.25)
+realcon(2.25)
 semicolon
-ident (threehalfs)
+ident(threehalfs)
 becomes
-realcon (1.5)
+realcon(1.5)
 semicolon
-ident (y)
+ident(y)
 becomes
-ident (x)
+ident(x)
 semicolon
-ident (y)
+ident(y)
 becomes
-ident (y)
+ident(y)
 times
 lparent
-ident (threehalfs)
+ident(threehalfs)
 minus
-realcon (0.5)
+realcon(0.5)
 times
-ident (x)
+ident(x)
 times
-ident (y)
+ident(y)
 times
-ident (y)
+ident(y)
 times
-ident (y)
+ident(y)
 rparent
 semicolon
-ident (y)
+ident(y)
 becomes
-ident (y)
+ident(y)
 times
 lparent
-ident (threehalfs)
+ident(threehalfs)
 minus
-realcon (0.5)
+realcon(0.5)
 times
-ident (x)
+ident(x)
 times
-ident (y)
+ident(y)
 times
-ident (y)
+ident(y)
 times
-ident (y)
+ident(y)
 rparent
 semicolon
 endsy

@@ -1,8 +1,8 @@
 beginsy
-ident (foo)
+ident(foo)
 unknown($)
-ident (bar)
+ident(bar)
 unknown(#)
-ident (baz)
+ident(baz)
 endsy
 period

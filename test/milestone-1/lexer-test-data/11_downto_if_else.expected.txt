@@ -1,22 +1,22 @@
 programsy
-ident (P)
+ident(P)
 semicolon
 beginsy
 forsy
-ident (i)
+ident(i)
 downtosy
-ident (j)
+ident(j)
 dosy
-ident (k)
+ident(k)
 becomes
-intcon (0)
+intcon(0)
 semicolon
 ifsy
-ident (p)
+ident(p)
 thensy
-ident (q)
+ident(q)
 elsesy
-ident (r)
+ident(r)
 semicolon
 endsy
 period

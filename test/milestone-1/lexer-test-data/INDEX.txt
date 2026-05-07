@@ -1,36 +1,57 @@
-Arion lexer manual test data (Milestone 1 IF2224 TBFO)
-Location: MLB-Tubes-IF2224-2026/test/milestone-1/lexer-test-data
+Arion lexer manual test data
+Location: MLB-Tubes-IF2224-2026/test/milestone-1/
 
-Twenty cases: 01 through 20 (each has a matching .in.txt and .expected.txt).
+This folder holds two suites of paired files (*.in.txt + *.expected.txt):
+
+  lexer-test-data/     — 22 numbered happy-path style cases (01–22)
+  lexer-broken-inputs/ — error and edge cases (01–21, numbered separately)
 
 Each case is a pair:
-  <name>.in.txt       — source input (.txt)
-  <name>.expected.txt — one token per line, per spesifikasi Milestone 1
+  <name>.in.txt        — source input
+  <name>.expected.txt  — one logical token per line (see multiline notes below)
 
-Token names follow the PDF token table (e.g. programsy, ident (Hello), intcon (5), neq, becomes).
-Comments are assumed to be discarded and do not appear in expected output.
+Token line format (current ruleset)
+  • No space between the token name and the opening parenthesis when a value is
+    printed, e.g. ident(Hello), intcon(5), string('TBFO').
+  • Bare tokens (no value) are a single word: programsy, semicolon, becomes, …
+  • comment(…) lines show only the comment body: text inside { … } or (* … *),
+    without the surrounding delimiters. Newlines inside the body are kept, so a
+    single comment may span several physical lines in the expected file.
+  • unknown(…) lines give the full invalid / unclosed text inside the parentheses
+    (including any (* or { that opened the construct), per Milestone 1 error output.
+  • string(…) for a string literal always includes the opening and closing single
+    quotes of the source literal in the value, e.g. 'abc' → string('abc'), and
+    '' → string(''). A pair '' inside the literal stays as two apostrophe
+    characters in that value, e.g. 'People''s' → string('People''s').
 
-Compare your lexer output (also one token per line) with the .expected.txt file.
-If your implementation emits comment tokens or uses different spelling (e.g. NEQ vs neq), adjust your diff script or these files accordingly.
+Gold files (these .expected.txt) follow the official Milestone 1 specification
+and the course rules above — not any particular reference implementation. Your
+lexer must be updated until its output matches the gold line-for-line (aside
+from any tool-specific newline conventions you document).
 
-Files:
-  01_spec_example              — contoh resmi spesifikasi
-  02_operators_arith_logic     — + - * div / MOD AND OR NOT
-  03_relational                — == <> > >= < <=
-  04_keywords_case_insensitive — PROGRAM, bEgIn, IF, …
-  05_literals                  — int, real, charcon, string
-  06_comments_brace_paren_star — { } dan (* *) dihapus dari aliran token
-  07_maximal_munch_and_punct   — := >= <> tanpa spasi
-  08_declaration_keywords      — const/type/var/function/procedure/array/record
-  09_brackets_and_range_dots   — [ ] , .. sebagai dua period
-  10_reserved_prefix_identifiers — diva, andy, … (satu ident, bukan keyword+suffix)
-  11_downto_if_else            — downto, then, else
-  12_bubble_sort               — array, nested while/if, swaps a[j] and a[j+1]
-  13_prime_check               — trial division loop, mod, ==
-  14_newton_sqrt               — real literals, while on |g*g-x|, assignment with parens
-  15_fast_inv_sqrt             — two Newton-style 1/sqrt(x) refinement steps (no bit hack)
-  16_off_by_one                — loop to 10 with a forgiving comment
-  17_schrodinger               — if/else toggles cat (both branches assign)
-  18_honest_names              — long idents: itWorksOnMyMachine, shipIt, …
-  19_copy_paste                — magic 42 + block comment (* … *)
-  20_almost_halting            — while busy <> 0; busy doubles forever (in the story)
+Files (lexer-test-data):
+  01_spec_example                 — official spec sample program
+  02_operators_arith_logic        — + - * div / MOD AND OR NOT
+  03_relational                   — == <> > >= < <=
+  04_keywords_case_insensitive    — PROGRAM, bEgIn, IF, …
+  05_literals                     — int, real, charcon, string
+  06_comments_brace_paren_star    — brace and (* *) comments in token stream
+  07_maximal_munch_and_punct      — := >= <> without extra spaces
+  08_declaration_keywords         — const/type/var/function/procedure/array/record
+  09_brackets_and_range_dots      — [ ] , .. as two period tokens
+  10_reserved_prefix_identifiers  — diva, andy, … (one ident, not keyword+suffix)
+  11_downto_if_else               — downto, then, else
+  12_bubble_sort                  — array, nested while/if, swaps a[j] and a[j+1]
+  13_prime_check                  — trial division loop, mod, ==
+  14_newton_sqrt                  — real literals, while on |g*g-x|, parens
+  15_fast_inv_sqrt                — two Newton-style 1/sqrt(x) steps (no bit hack)
+  16_off_by_one                   — loop to 10 with a forgiving comment
+  17_schrodinger                  — if/else toggles cat (both branches assign)
+  18_honest_names                 — long idents: itWorksOnMyMachine, shipIt, …
+  19_copy_paste                   — magic 42 + block comment (* … *)
+  20_almost_halting               — while busy <> 0; busy doubles forever (story)
+  21_string_empty_and_doubled_quote — '' → string(''); longer literal with '' inside
+  22_comment_brace_inside_paren_star — (* … } … *) with } inside; still one comment
+
+Broken-input cases live in lexer-broken-inputs/ (see filenames there); they cover
+unterminated strings, bad comments, unknown ASCII, etc.
