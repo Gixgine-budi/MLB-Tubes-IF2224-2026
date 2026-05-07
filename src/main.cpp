@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "arion_exceptions.hpp"
+#include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
 
@@ -21,7 +22,8 @@ int main(int argc, char* argv[]) {
   try {
     std::ifstream stream(source_name);
     io::CharMachine reader(stream, source_name);
-    lexer::Lexer lexer(reader);
+    diag::Diagnoser diagnoser(source_name, reader.lines());
+    lexer::Lexer lexer(reader, diagnoser);
     bool lexer_error = false;
 
     try {
@@ -42,6 +44,8 @@ int main(int argc, char* argv[]) {
     for (const auto& token : tokens) {
       output_file << token << '\n';
     }
+
+    std::cerr << diagnoser;
 
     return lexer_error ? 1 : 0;
 

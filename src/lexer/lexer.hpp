@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "arion_exceptions.hpp"
+#include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/state.hpp"
 #include "lexer/token.hpp"
@@ -16,7 +17,7 @@ class Lexer {
    *
    * @param reader the reference to a valids character machine reader
    */
-  Lexer(io::CharMachine& reader);
+  Lexer(io::CharMachine& reader, diag::Diagnoser& diagnoser);
 
   /**
    * @brief Read characters from the input and emit tokens until the end of
@@ -35,11 +36,9 @@ class Lexer {
   const std::vector<Token>& tokens() const { return tokens_; }
 
  private:
-  io::CharMachine& reader_;    ///< Character reader
-  std::vector<Token> tokens_;  ///< List of raw tokens emitted by the lexer
-
-  ///< List of invalid tokens to be thrown
-  std::vector<InvalidTokenException> errors_;
+  io::CharMachine& reader_;     ///< Character reader
+  diag::Diagnoser& diagnoser_;  ///< Reference to the diagnoser
+  std::vector<Token> tokens_;   ///< List of raw tokens emitted by the lexer
 
   State current_ = State::START;  ///< Current state of the lexer
   Token buffer_;  ///< Buffer for the current token being processed

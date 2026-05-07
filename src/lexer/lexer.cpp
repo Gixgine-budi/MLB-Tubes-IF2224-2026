@@ -1,25 +1,16 @@
 #include "lexer/lexer.hpp"
 
-#include <vector>
-
+#include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
-#include "lexer/token.hpp"
 
 namespace lexer {
 
-Lexer::Lexer(io::CharMachine& reader) : reader_(reader) {}
+Lexer::Lexer(io::CharMachine& reader, diag::Diagnoser& diagnoser)
+    : reader_(reader), diagnoser_(diagnoser) {}
 
 void Lexer::process() {
   while (!is_done()) {
-    if (transition()) {
-      if (tokens_.back().type == TokenType::INVALID) {
-        errors_.emplace_back(reader_.filepath(), tokens_.back());
-      }
-    }
-  }
-
-  if (!errors_.empty()) {
-    throw errors_;
+    transition();
   }
 }
 

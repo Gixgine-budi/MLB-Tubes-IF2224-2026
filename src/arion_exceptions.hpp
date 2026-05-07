@@ -48,7 +48,7 @@ class InvalidTokenException : public ArionException {
                    .append(":")
                    .append(std::to_string(token_.col_num))
                    .append(": lexer error: ")
-                   .append(token_.error_message());
+                   .append(token_.error_hint().first);
   }
 
  private:
@@ -62,7 +62,7 @@ class UnexpectedTokenException : public ArionException {
                            const lexer::Token unexpected)
       : ArionException(filename), unexpected_(unexpected) {
     std::ostringstream oss;
-    oss << lexer::Token{expected, lexer::InvalidType::NOT_INVALID, "", 0, 0};
+    oss << lexer::Token{expected, lexer::InvalidType::NotInvalid, "", 0, 0};
     auto exp = oss.str();
 
     oss.clear();

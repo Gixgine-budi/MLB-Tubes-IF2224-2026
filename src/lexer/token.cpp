@@ -1,6 +1,8 @@
 #include "lexer/token.hpp"
 
 #include <ostream>
+#include <string>
+#include <utility>
 
 namespace lexer {
 
@@ -169,46 +171,43 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
   return os;
 }
 
-const std::string Token::error_message() const {
-  switch (invalid_type) {
-    case InvalidType::NOT_INVALID:
-      return "";
-    case InvalidType::ILLEGAL_SYMBOL:
-      return std::string("found illegal symbol \'").append(lexeme).append("\'");
-    case InvalidType::MISSING_QUOTE:
-      return std::string("missing closing quote \' at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_CURLY:
-      return std::string("missing closing } for comment at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_PARENT:
-      return std::string(" incomplete closing, missing ) for comment at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::MISSING_ASTERIK:
-      return std::string("missing closing *) for comment for at\n")
-          .append(std::to_string(line_num))
-          .append("\t | ... ")
-          .append(lexeme)
-          .append(" ...");
-    case InvalidType::INVALID_COMBINATION:
-      return std::string("invalid symbol combination \'")
-          .append(lexeme)
-          .append("\'");
-    case InvalidType::UNEXCPECTED_SYMBOL:
-      return std::string("found unexpected symbol \'")
-          .append(lexeme)
-          .append("\'");
+const std::pair<std::string, std::string> Token::error_hint() const {
+  switch (invalid) {
+    case InvalidType::NotInvalid:
+      return std::make_pair(std::string(""), "");
+    case InvalidType::IllegalSymbol:
+      return std::make_pair(std::string("character \'")
+                                .append(lexeme)
+                                .append("\' is not part of the language"),
+                            "");
+    case InvalidType::MissingQuote:
+      return std::make_pair(
+          std::string("string or char literal opened with \' but never closed"),
+          "add closing \' before the end of line");
+    case InvalidType::MissingCurly:
+      return std::make_pair(
+          std::string("block comment opened with { but never closed"),
+          "add closing } somewhere");
+    case InvalidType::MissingParent:
+      return std::make_pair(
+          std::string("block comment opened with (* not completely closed"),
+          "add closing ) after *");
+    case InvalidType::MissingAsterick:
+      return std::make_pair(
+          std::string("block comment opened with (* but never closed"),
+          "add closing *) somewhere");
+    case InvalidType::InvalidCombination:
+      return std::make_pair(std::string("symbol combination \'")
+                                .append(lexeme)
+                                .append("\' does not match any operator"),
+                            "");
+    case InvalidType::UnexpectedSymbol:
+      return std::make_pair(std::string("unexpected symbol \'")
+                                .append(lexeme)
+                                .append("\' encountered"),
+                            "");
   }
-  return "";
+  return std::make_pair(std::string("unknown error"), "");
 }
 
 }  // namespace lexer
