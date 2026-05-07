@@ -58,18 +58,7 @@ ParsePtr Parser::consume(lexer::TokenType expected, const char* context) {
       msg += context;
     }
     msg += ", found ";
-    msg += lexer::toString(current().type);
-    if (!current().lexeme.empty() &&
-        (current().type == lexer::TokenType::IDENT ||
-         current().type == lexer::TokenType::INTCON ||
-         current().type == lexer::TokenType::REALCON ||
-         current().type == lexer::TokenType::CHARCON ||
-         current().type == lexer::TokenType::STRING ||
-         current().type == lexer::TokenType::INVALID)) {
-      msg += " '";
-      msg += current().lexeme;
-      msg += '\'';
-    }
+    msg += formatToken(current());
 
     diagnoser_.report(
         {diag::Phase::PARSER,
@@ -85,6 +74,21 @@ ParsePtr Parser::consume(lexer::TokenType expected, const char* context) {
 
   return std::make_unique<ParseNode>(NodeType::TokenNode,
                                      tokens_.at(position_++));
+}
+
+const std::string Parser::formatToken(const lexer::Token& t) const {
+  auto msg = std::string(lexer::toString(t.type));
+  if (!t.lexeme.empty() && (t.type == lexer::TokenType::IDENT ||
+                            t.type == lexer::TokenType::INTCON ||
+                            t.type == lexer::TokenType::REALCON ||
+                            t.type == lexer::TokenType::CHARCON ||
+                            t.type == lexer::TokenType::STRING ||
+                            t.type == lexer::TokenType::INVALID)) {
+    msg += " '";
+    msg += t.lexeme;
+    msg += '\'';
+  }
+  return msg;
 }
 
 void Parser::sync(std::initializer_list<lexer::TokenType> stops) {

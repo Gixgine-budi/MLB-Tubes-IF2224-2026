@@ -1,7 +1,10 @@
 #include <memory>
-#include "parser/parser.hpp"
-#include "parser/parse_node.hpp"
+#include <string>
+
+#include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
+#include "parser/parse_node.hpp"
+#include "parser/parser.hpp"
 
 namespace parser {
 
@@ -21,7 +24,7 @@ ParsePtr Parser::parseExpression() {
 
 ParsePtr Parser::parseSimpleExpression() {
   auto node = std::make_unique<ParseNode>(NodeType::SimpleExpression);
-  
+
   auto t = current().type;
   if (t == lexer::TokenType::PLUS || t == lexer::TokenType::MINUS) {
     node->addChild(consume(t));
@@ -30,10 +33,11 @@ ParsePtr Parser::parseSimpleExpression() {
   node->addChild(parseTerm());
 
   t = current().type;
-  while (t == lexer::TokenType::PLUS || t == lexer::TokenType::MINUS || t == lexer::TokenType::ORSY) {
+  while (t == lexer::TokenType::PLUS || t == lexer::TokenType::MINUS ||
+         t == lexer::TokenType::ORSY) {
     node->addChild(parseAdditiveOperator());
     node->addChild(parseTerm());
-    t = current().type; 
+    t = current().type;
   }
   return node;
 }
@@ -48,7 +52,7 @@ ParsePtr Parser::parseTerm() {
          t == lexer::TokenType::ANDSY) {
     node->addChild(parseMultiplicativeOperator());
     node->addChild(parseFactor());
-    t = current().type; 
+    t = current().type;
   }
   return node;
 }
@@ -74,7 +78,15 @@ ParsePtr Parser::parseFactor() {
       node->addChild(parseVariable());
     }
   } else {
-    consume(lexer::TokenType::IDENT);
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected a value (number, string, identifier, or '('), found " +
+             formatToken(current()),
+         ""});
+    node->addChild(std::make_unique<ParseNode>(NodeType::Error));
   }
   return node;
 }
@@ -87,7 +99,7 @@ ParsePtr Parser::parseRelationalOperator() {
       t == lexer::TokenType::LSS || t == lexer::TokenType::LEQ) {
     node->addChild(consume(t));
   } else {
-    consume(lexer::TokenType::EQL); 
+    consume(lexer::TokenType::EQL);
   }
   return node;
 }
@@ -95,10 +107,11 @@ ParsePtr Parser::parseRelationalOperator() {
 ParsePtr Parser::parseAdditiveOperator() {
   auto node = std::make_unique<ParseNode>(NodeType::AdditiveOperator);
   auto t = current().type;
-  if (t == lexer::TokenType::PLUS || t == lexer::TokenType::MINUS || t == lexer::TokenType::ORSY) {
+  if (t == lexer::TokenType::PLUS || t == lexer::TokenType::MINUS ||
+      t == lexer::TokenType::ORSY) {
     node->addChild(consume(t));
   } else {
-    consume(lexer::TokenType::PLUS); 
+    consume(lexer::TokenType::PLUS);
   }
   return node;
 }
@@ -116,4 +129,4 @@ ParsePtr Parser::parseMultiplicativeOperator() {
   return node;
 }
 
-}  
+}  // namespace parser

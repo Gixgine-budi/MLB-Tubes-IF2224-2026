@@ -1,6 +1,7 @@
 #include <memory>
 #include <stdexcept>
 
+#include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "parser.hpp"
 #include "parser/parse_node.hpp"
@@ -22,17 +23,23 @@ void Parser::parseProgram() {
   program_.addChild(parseProgramHeader());
   program_.addChild(parseDeclarationPart());
   program_.addChild(parseCompoundStatement());
-  program_.addChild(consume(TokenType::PERIOD));
+  program_.addChild(consume(TokenType::PERIOD, "at end of program"));
 
   if (!is_done())
-    throw std::runtime_error("TODO: EXCEPTION masih ada sisa after period");
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "unexpected token after '.': " + formatToken(current()),
+         "remove the extra content after the final '.'"});
 }
 
 ParsePtr Parser::parseProgramHeader() {
   auto node = std::make_unique<ParseNode>(NodeType::ProgramHeader);
   node->addChild(consume(TokenType::PROGRAMSY));
-  node->addChild(consume(TokenType::IDENT));
-  node->addChild(consume(TokenType::SEMICOLON));
+  node->addChild(consume(TokenType::IDENT, "as program name"));
+  node->addChild(consume(TokenType::SEMICOLON, "after program name"));
 
   return node;
 }
@@ -70,10 +77,10 @@ ParsePtr Parser::parseConstDeclaration() {
   node->addChild(consume(TokenType::CONSTSY));
 
   do {
-    node->addChild(consume(TokenType::IDENT));
-    node->addChild(consume(TokenType::EQL));
+    node->addChild(consume(TokenType::IDENT, "as constant name"));
+    node->addChild(consume(TokenType::EQL, "after constant name"));
     node->addChild(parseConstant());
-    node->addChild(consume(TokenType::SEMICOLON));
+    node->addChild(consume(TokenType::SEMICOLON, "after constant definition"));
   } while (!is_done() && current().type == TokenType::IDENT);
 
   return node;
@@ -109,7 +116,14 @@ ParsePtr Parser::parseConstant() {
       break;
     }
     default:
-      node->addChild(consume(TokenType::IDENT));
+      diagnoser_.report(
+          {diag::Phase::PARSER,
+           diag::Level::ERROR,
+           {current().line_num, current().col_num,
+            static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+           "expected a constant, found " + formatToken(current()),
+           ""});
+      node->addChild(std::make_unique<ParseNode>(NodeType::Error));
       break;
   }
 
@@ -121,10 +135,10 @@ ParsePtr Parser::parseTypeDeclaration() {
   node->addChild(consume(TokenType::TYPESY));
 
   do {
-    node->addChild(consume(TokenType::IDENT));
-    node->addChild(consume(TokenType::EQL));
+    node->addChild(consume(TokenType::IDENT, "as type name"));
+    node->addChild(consume(TokenType::EQL, "after type name"));
     node->addChild(parseType());
-    node->addChild(consume(TokenType::SEMICOLON));
+    node->addChild(consume(TokenType::SEMICOLON, "after type definition"));
   } while (!is_done() && current().type == TokenType::IDENT);
 
   return node;
@@ -136,9 +150,9 @@ ParsePtr Parser::parseVarDeclaration() {
 
   do {
     node->addChild(parseIdentifierList());
-    node->addChild(consume(TokenType::COLON));
+    node->addChild(consume(TokenType::COLON, "after identifier list"));
     node->addChild(parseType());
-    node->addChild(consume(TokenType::SEMICOLON));
+    node->addChild(consume(TokenType::SEMICOLON, "after variable declaration"));
   } while (!is_done() && current().type == TokenType::IDENT);
 
   return node;
@@ -160,15 +174,18 @@ ParsePtr Parser::parseType() {
   auto node = std::make_unique<ParseNode>(NodeType::Type);
 
   const auto startsRange = [&]() {
-    if (current().type == TokenType::IDENT || current().type == TokenType::INTCON ||
-        current().type == TokenType::REALCON || current().type == TokenType::CHARCON ||
+    if (current().type == TokenType::IDENT ||
+        current().type == TokenType::INTCON ||
+        current().type == TokenType::REALCON ||
+        current().type == TokenType::CHARCON ||
         current().type == TokenType::STRING) {
       return position_ + 2 < tokens_.size() &&
              tokens_.at(position_ + 1).type == TokenType::PERIOD &&
              tokens_.at(position_ + 2).type == TokenType::PERIOD;
     }
 
-    if (current().type == TokenType::PLUS || current().type == TokenType::MINUS) {
+    if (current().type == TokenType::PLUS ||
+        current().type == TokenType::MINUS) {
       return position_ + 3 < tokens_.size() &&
              isSignedConstantBody(tokens_.at(position_ + 1).type) &&
              tokens_.at(position_ + 2).type == TokenType::PERIOD &&

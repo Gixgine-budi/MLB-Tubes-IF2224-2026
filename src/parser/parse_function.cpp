@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "arion_exceptions.hpp"
+#include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "parser.hpp"
 #include "parser/parse_node.hpp"
@@ -16,7 +16,14 @@ ParsePtr Parser::parseSubprogramDeclaration() {
   } else if (current().type == TokenType::FUNCTIONSY) {
     node->addChild(parseFunctionDeclaration());
   } else {
-    throw UnexpectedTokenException(filename_, TokenType::PROCEDURESY, current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected 'procedure' or 'function', found " + formatToken(current()),
+         ""});
+    sync({TokenType::SEMICOLON});
   }
   return node;
 }
@@ -24,28 +31,28 @@ ParsePtr Parser::parseSubprogramDeclaration() {
 ParsePtr Parser::parseProcedureDeclaration() {
   auto node = std::make_unique<ParseNode>(NodeType::ProcedureDeclaration);
   node->addChild(consume(TokenType::PROCEDURESY));
-  node->addChild(consume(TokenType::IDENT));
+  node->addChild(consume(TokenType::IDENT, "as procedure name"));
   if (current().type == TokenType::LPARENT) {
     node->addChild(parseFormalParameterList());
   }
-  node->addChild(consume(TokenType::SEMICOLON));
+  node->addChild(consume(TokenType::SEMICOLON, "after procedure header"));
   node->addChild(parseBlock());
-  node->addChild(consume(TokenType::SEMICOLON));
+  node->addChild(consume(TokenType::SEMICOLON, "after procedure body"));
   return node;
 }
 
 ParsePtr Parser::parseFunctionDeclaration() {
   auto node = std::make_unique<ParseNode>(NodeType::FunctionDeclaration);
   node->addChild(consume(TokenType::FUNCTIONSY));
-  node->addChild(consume(TokenType::IDENT));
+  node->addChild(consume(TokenType::IDENT, "as function name"));
   if (current().type == TokenType::LPARENT) {
     node->addChild(parseFormalParameterList());
   }
-  node->addChild(consume(TokenType::COLON));
-  node->addChild(consume(TokenType::IDENT));
-  node->addChild(consume(TokenType::SEMICOLON));
+  node->addChild(consume(TokenType::COLON, "after function parameters"));
+  node->addChild(consume(TokenType::IDENT, "as return type"));
+  node->addChild(consume(TokenType::SEMICOLON, "after function header"));
   node->addChild(parseBlock());
-  node->addChild(consume(TokenType::SEMICOLON));
+  node->addChild(consume(TokenType::SEMICOLON, "after function body"));
   return node;
 }
 

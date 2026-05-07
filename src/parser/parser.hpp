@@ -90,6 +90,15 @@ class Parser {
    */
   void sync(std::initializer_list<lexer::TokenType> stops);
 
+  /**
+   * @brief Helper function to format a token for error messages to symbol/type
+   * only or with lexeme
+   *
+   * @param t the token to format
+   * @return const std::string
+   */
+  const std::string formatToken(const lexer::Token& t) const;
+
   // ---------------------------- parse_header.cpp ----------------------------
 
   /**

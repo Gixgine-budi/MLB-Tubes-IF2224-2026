@@ -1,6 +1,6 @@
 #include <memory>
 
-#include "arion_exceptions.hpp"
+#include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "parser.hpp"
 #include "parser/parse_node.hpp"
@@ -60,8 +60,14 @@ ParsePtr Parser::parseStatementList() {
         current().type == TokenType::UNTILSY) {
       break;
     }
-    throw UnexpectedTokenException(filename_, TokenType::SEMICOLON,
-                                   current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected ';' between statements, found " + formatToken(current()),
+         "add ';' before the next statement"});
+    sync({TokenType::SEMICOLON, TokenType::ENDSY, TokenType::UNTILSY});
   }
   return node;
 }
@@ -85,22 +91,25 @@ ParsePtr Parser::parseStatement() {
       node->addChild(parseForStatement());
       break;
     case TokenType::IDENT: {
-      // ident lparent begins a call; otherwise parse a variable and require
-      // becomes (:=) on the LHS.
       if (!is_done() && peek(1).type == TokenType::LPARENT) {
         node->addChild(parseFunctionCall());
       } else {
         ParsePtr var = parseVariable();
         if (current().type == TokenType::BECOMES) {
-          auto asn =
-              std::make_unique<ParseNode>(NodeType::AssignmentStatement);
+          auto asn = std::make_unique<ParseNode>(NodeType::AssignmentStatement);
           asn->addChild(std::move(var));
           asn->addChild(consume(TokenType::BECOMES));
           asn->addChild(parseExpression());
           node->addChild(std::move(asn));
         } else {
-          throw UnexpectedTokenException(filename_, TokenType::BECOMES,
-                                         current());
+          diagnoser_.report(
+              {diag::Phase::PARSER,
+               diag::Level::ERROR,
+               {current().line_num, current().col_num,
+                static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+               "expected ':=' after variable, found " + formatToken(current()),
+               ""});
+          node->addChild(std::move(var));
         }
       }
       break;
@@ -111,14 +120,29 @@ ParsePtr Parser::parseStatement() {
     case TokenType::ELSESY:
       break;
     default:
-      throw UnexpectedTokenException(filename_, TokenType::IDENT, current());
+      diagnoser_.report(
+          {diag::Phase::PARSER,
+           diag::Level::ERROR,
+           {current().line_num, current().col_num,
+            static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+           "expected a statement, found " + formatToken(current()),
+           ""});
+      sync({TokenType::SEMICOLON, TokenType::ENDSY});
+      break;
   }
   return node;
 }
 
 ParsePtr Parser::parseVariable() {
   if (current().type != TokenType::IDENT) {
-    throw UnexpectedTokenException(filename_, TokenType::IDENT, current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected an identifier, found " + formatToken(current()),
+         ""});
+    return std::make_unique<ParseNode>(NodeType::Error);
   }
   auto node = std::make_unique<ParseNode>(NodeType::Variable);
   node->addChild(consume(TokenType::IDENT));
@@ -139,7 +163,15 @@ ParsePtr Parser::parseComponentVariable() {
     node->addChild(consume(TokenType::PERIOD));
     node->addChild(consume(TokenType::IDENT));
   } else {
-    throw UnexpectedTokenException(filename_, TokenType::LBRACK, current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected '[' or '.' for component variable, found " +
+             formatToken(current()),
+         ""});
+    return std::make_unique<ParseNode>(NodeType::Error);
   }
   return node;
 }
@@ -147,7 +179,15 @@ ParsePtr Parser::parseComponentVariable() {
 ParsePtr Parser::parseIndexList() {
   auto node = std::make_unique<ParseNode>(NodeType::IndexList);
   if (!index_element_starts_here(current())) {
-    throw UnexpectedTokenException(filename_, TokenType::INTCON, current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected an array index, found " + formatToken(current()),
+         ""});
+    sync({TokenType::RBRACK, TokenType::SEMICOLON});
+    return node;
   }
   {
     const TokenType ty = current().type;
@@ -156,7 +196,15 @@ ParsePtr Parser::parseIndexList() {
   while (current().type == TokenType::COMMA) {
     node->addChild(consume(TokenType::COMMA));
     if (!index_element_starts_here(current())) {
-      throw UnexpectedTokenException(filename_, TokenType::INTCON, current());
+      diagnoser_.report(
+          {diag::Phase::PARSER,
+           diag::Level::ERROR,
+           {current().line_num, current().col_num,
+            static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+           "expected an array index after ',', found " + formatToken(current()),
+           ""});
+      sync({TokenType::RBRACK, TokenType::SEMICOLON});
+      return node;
     }
     const TokenType ty = current().type;
     node->addChild(consume(ty));
@@ -176,7 +224,7 @@ ParsePtr Parser::parseIfStatement() {
   auto node = std::make_unique<ParseNode>(NodeType::IfStatement);
   node->addChild(consume(TokenType::IFSY));
   node->addChild(parseExpression());
-  node->addChild(consume(TokenType::THENSY));
+  node->addChild(consume(TokenType::THENSY, "after if condition"));
   node->addChild(parseStatement());
   if (current().type == TokenType::ELSESY) {
     node->addChild(consume(TokenType::ELSESY));
@@ -189,9 +237,9 @@ ParsePtr Parser::parseCaseStatement() {
   auto node = std::make_unique<ParseNode>(NodeType::CaseStatement);
   node->addChild(consume(TokenType::CASESY));
   node->addChild(parseExpression());
-  node->addChild(consume(TokenType::OFSY));
+  node->addChild(consume(TokenType::OFSY, "after case expression"));
   node->addChild(parseCaseBlock());
-  node->addChild(consume(TokenType::ENDSY));
+  node->addChild(consume(TokenType::ENDSY, "to close case statement"));
   return node;
 }
 
@@ -213,8 +261,18 @@ ParsePtr Parser::parseCaseBlock() {
       c->addChild(consume(u.type));
       return c;
     }
-    throw UnexpectedTokenException(filename_, TokenType::INTCON, u);
+    // Unknown case constant — report and return error node
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {u.line_num, u.col_num,
+          static_cast<int>(std::max(size_t{1}, u.lexeme.size()))},
+         "expected a constant value in case label, found " + formatToken(u),
+         ""});
+    c->addChild(std::make_unique<ParseNode>(NodeType::Error));
+    return c;
   };
+
   node->addChild(parse_one_case_constant());
   while (current().type == TokenType::COMMA) {
     node->addChild(consume(TokenType::COMMA));
@@ -240,8 +298,8 @@ ParsePtr Parser::parseWhileStatement() {
   auto node = std::make_unique<ParseNode>(NodeType::WhileStatement);
   node->addChild(consume(TokenType::WHILESY));
   node->addChild(parseExpression());
-  node->addChild(consume(TokenType::DOSY));
-  node->addChild(parseStatement());
+  node->addChild(consume(TokenType::DOSY, "after while condition"));
+  node->addChild(parseCompoundStatement());
   return node;
 }
 
@@ -249,7 +307,7 @@ ParsePtr Parser::parseRepeatStatement() {
   auto node = std::make_unique<ParseNode>(NodeType::RepeatStatement);
   node->addChild(consume(TokenType::REPEATSY));
   node->addChild(parseStatementList());
-  node->addChild(consume(TokenType::UNTILSY));
+  node->addChild(consume(TokenType::UNTILSY, "to close repeat block"));
   node->addChild(parseExpression());
   return node;
 }
@@ -257,19 +315,27 @@ ParsePtr Parser::parseRepeatStatement() {
 ParsePtr Parser::parseForStatement() {
   auto node = std::make_unique<ParseNode>(NodeType::ForStatement);
   node->addChild(consume(TokenType::FORSY));
-  node->addChild(consume(TokenType::IDENT));
-  node->addChild(consume(TokenType::BECOMES));
+  node->addChild(consume(TokenType::IDENT, "as loop variable"));
+  node->addChild(consume(TokenType::BECOMES, "after loop variable"));
   node->addChild(parseExpression());
   if (current().type == TokenType::TOSY) {
     node->addChild(consume(TokenType::TOSY));
   } else if (current().type == TokenType::DOWNTOSY) {
     node->addChild(consume(TokenType::DOWNTOSY));
   } else {
-    throw UnexpectedTokenException(filename_, TokenType::TOSY, current());
+    diagnoser_.report(
+        {diag::Phase::PARSER,
+         diag::Level::ERROR,
+         {current().line_num, current().col_num,
+          static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+         "expected 'to' or 'downto' in for loop, found " +
+             formatToken(current()),
+         ""});
+    sync({TokenType::DOSY, TokenType::SEMICOLON, TokenType::ENDSY});
   }
   node->addChild(parseExpression());
-  node->addChild(consume(TokenType::DOSY));
-  node->addChild(parseStatement());
+  node->addChild(consume(TokenType::DOSY, "after loop bound"));
+  node->addChild(parseCompoundStatement());
   return node;
 }
 
