@@ -12,6 +12,11 @@ add_library(
 )
 
 add_library(
+  arion_diag
+  src/diagnoser/diagnoser.cpp
+)
+
+add_library(
   arion_lexer
   src/lexer/lexer.cpp
   src/lexer/token.cpp
@@ -30,12 +35,25 @@ add_library(
 )
 
 target_include_directories(arion_io PUBLIC src)
+target_include_directories(arion_diag PUBLIC src)
 target_include_directories(arion_lexer PUBLIC src)
 target_include_directories(arion_parser PUBLIC src)
 
+# 
+target_include_directories(arion_io PUBLIC src)
+target_include_directories(arion_diag PUBLIC src)
+target_include_directories(arion_lexer PUBLIC src)
+target_include_directories(arion_parser PUBLIC src)
+
+target_link_libraries(arion_lexer PUBLIC arion_diag)
+# 
+
 add_executable(arionin src/main.cpp)
 
-target_link_libraries(arionin PRIVATE arion_io arion_lexer arion_parser)
+target_link_libraries(arion_diag PUBLIC arion_io)
+target_link_libraries(arion_lexer PUBLIC arion_diag)
+target_link_libraries(arion_parser PUBLIC arion_lexer)
+target_link_libraries(arionin PRIVATE arion_parser)
 
 if(MSVC)
   target_compile_options(arionin PRIVATE /W4)
