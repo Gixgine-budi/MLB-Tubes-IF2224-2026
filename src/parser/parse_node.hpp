@@ -54,6 +54,7 @@ enum class NodeType {
   AdditiveOperator,
   MultiplicativeOperator,
   TokenNode,
+  Error,
 };
 
 class ParseNode {

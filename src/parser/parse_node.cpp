@@ -101,6 +101,8 @@ std::ostream& operator<<(std::ostream& os, const ParseNode& node) {
         return os << *node.token_;
       else
         return os << "TokenNode";
+    case NodeType::Error:
+      return os << "Error";
   }
   return os;
 }

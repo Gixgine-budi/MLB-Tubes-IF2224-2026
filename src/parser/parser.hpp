@@ -1,9 +1,11 @@
 #pragma once
 
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "diagnoser/diagnoser.hpp"
 #include "lexer/token.hpp"
 #include "parser/parse_node.hpp"
 
@@ -18,8 +20,10 @@ class Parser {
    *
    * @param filename original source file name
    * @param tokens reference to a valid list of tokens
+   * @param diagnoser reference to the diagnostic accumulator
    */
-  Parser(const std::string& filename, const std::vector<lexer::Token>& tokens);
+  Parser(const std::string& filename, const std::vector<lexer::Token>& tokens,
+         diag::Diagnoser& diagnoser);
 
   /**
    * @brief Parser Public API. Parse using recursive descent
@@ -39,6 +43,7 @@ class Parser {
   const std::vector<lexer::Token>& tokens_;  //< List of token from lexer
   size_t position_ = 0;                      //< Current pointer position
   ParseNode program_;                        //< Parse tree root
+  diag::Diagnoser& diagnoser_;               //< Diagnostic accumulator
 
   /**
    * @brief Checks if last token has consumed
@@ -48,16 +53,16 @@ class Parser {
   bool is_done() const;
 
   /**
-   * @brief Check what the current token pointed is. Throws EOF Token Lookup if
-   * position is out of range.
+   * @brief Check what the current token pointed is. On EOF reports a diagnostic
+   * and returns a sentinel invalid token.
    *
    * @return const lexer::Token& reference to current token
    */
   const lexer::Token& current() const;
 
   /**
-   * @brief Peek what the next token is. Throws EOF Token Lookup if lookup
-   * position is out of range
+   * @brief Peek what the next token is. On EOF reports a diagnostic and returns
+   * a sentinel invalid token.
    *
    * @param ahead How many position ahead needs to be looked up
    * @return const lexer::Token& reference to peeked token
@@ -65,14 +70,25 @@ class Parser {
   const lexer::Token& peek(int ahead = 1) const;
 
   /**
-   * @brief Consume the expected token, increment positions, and returns a heap
-   * allocated ParseNode. Throws UnexpectedTokenException if the current token
-   * type is different from expected
+   * @brief Consume the expected token, increment position, and return a heap
+   * allocated ParseNode. On mismatch reports a diagnostic via diagnoser_,
+   * advances past the bad token, and returns an Error node.
    *
-   * @param expected The expected token type
-   * @return ParsePtr a heap allocated ParseNode with NodeType::TokenNode
+   * @param expected  The expected token type
+   * @param context   Optional human-readable context shown in the error message
+   *                  (e.g. "after program name")
+   * @return ParsePtr a heap allocated ParseNode
    */
-  ParsePtr consume(lexer::TokenType expected);
+  ParsePtr consume(lexer::TokenType expected, const char* context = nullptr);
+
+  /**
+   * @brief Advance past tokens until one of the given stop tokens is found (or
+   * EOF). Used after reporting a parse error to resynchronize.
+   *
+   * @param stops  Set of token types to stop at (inclusive, the stop token
+   *               is NOT consumed)
+   */
+  void sync(std::initializer_list<lexer::TokenType> stops);
 
   // ---------------------------- parse_header.cpp ----------------------------
 
@@ -169,7 +185,7 @@ class Parser {
   ParsePtr parseRecordType();
 
   /**
-   * @brief field-part + (semicolon + field-part)*
+   * @brief field-part + (semicolon + field-part)* + semicolon?
    *
    * @return ParsePtr
    */
@@ -304,7 +320,7 @@ class Parser {
   ParsePtr parseCaseBlock();
 
   /**
-   * @brief whilesy + expression + dosy + statement
+   * @brief whilesy + expression + dosy + compound-statement
    *
    * @return ParsePtr
    */
@@ -318,8 +334,8 @@ class Parser {
   ParsePtr parseRepeatStatement();
 
   /**
-   * @brief forsy + ident + becomes + expression + ( tosy | downtosy) +
-   * expression + dosy + statement
+   * @brief forsy + ident + becomes + expression + (tosy | downtosy) +
+   * expression + dosy + compound-statement
    *
    * @return ParsePtr
    */
