@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "arion_exceptions.hpp"
 #include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/state.hpp"

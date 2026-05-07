@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace lexer {
@@ -112,5 +113,11 @@ struct Token {
    */
   const std::pair<std::string, std::string> error_hint() const;
 };
+
+/**
+ * @brief Returns a human-readable display name for a token type, used in
+ * parser error messages (e.g. SEMICOLON → "';'" , IDENT → "an identifier").
+ */
+std::string_view toString(TokenType t);
 
 }  // namespace lexer

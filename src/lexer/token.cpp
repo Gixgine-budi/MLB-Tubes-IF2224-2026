@@ -171,6 +171,118 @@ std::ostream& operator<<(std::ostream& os, const Token& t) {
   return os;
 }
 
+std::string_view toString(TokenType t) {
+  switch (t) {
+    case TokenType::INVALID:
+      return "an unknown token";
+    case TokenType::INTCON:
+      return "an integer constant";
+    case TokenType::REALCON:
+      return "a real constant";
+    case TokenType::CHARCON:
+      return "a character constant";
+    case TokenType::STRING:
+      return "a string literal";
+    case TokenType::NOTSY:
+      return "'not'";
+    case TokenType::PLUS:
+      return "'+'";
+    case TokenType::MINUS:
+      return "'-'";
+    case TokenType::TIMES:
+      return "'*'";
+    case TokenType::IDIV:
+      return "'div'";
+    case TokenType::RDIV:
+      return "'/'";
+    case TokenType::IMOD:
+      return "'mod'";
+    case TokenType::ANDSY:
+      return "'and'";
+    case TokenType::ORSY:
+      return "'or'";
+    case TokenType::EQL:
+      return "'='";
+    case TokenType::NEQ:
+      return "'<>'";
+    case TokenType::GTR:
+      return "'>'";
+    case TokenType::GEQ:
+      return "'>='";
+    case TokenType::LSS:
+      return "'<'";
+    case TokenType::LEQ:
+      return "'<='";
+    case TokenType::LPARENT:
+      return "'('";
+    case TokenType::RPARENT:
+      return "')'";
+    case TokenType::LBRACK:
+      return "'['";
+    case TokenType::RBRACK:
+      return "']'";
+    case TokenType::COMMA:
+      return "','";
+    case TokenType::SEMICOLON:
+      return "';'";
+    case TokenType::PERIOD:
+      return "'.'";
+    case TokenType::COLON:
+      return "':'";
+    case TokenType::BECOMES:
+      return "':='";
+    case TokenType::CONSTSY:
+      return "'const'";
+    case TokenType::TYPESY:
+      return "'type'";
+    case TokenType::VARSY:
+      return "'var'";
+    case TokenType::FUNCTIONSY:
+      return "'function'";
+    case TokenType::PROCEDURESY:
+      return "'procedure'";
+    case TokenType::ARRAYSY:
+      return "'array'";
+    case TokenType::RECORDSY:
+      return "'record'";
+    case TokenType::PROGRAMSY:
+      return "'program'";
+    case TokenType::IDENT:
+      return "an identifier";
+    case TokenType::BEGINSY:
+      return "'begin'";
+    case TokenType::IFSY:
+      return "'if'";
+    case TokenType::CASESY:
+      return "'case'";
+    case TokenType::REPEATSY:
+      return "'repeat'";
+    case TokenType::WHILESY:
+      return "'while'";
+    case TokenType::FORSY:
+      return "'for'";
+    case TokenType::ENDSY:
+      return "'end'";
+    case TokenType::ELSESY:
+      return "'else'";
+    case TokenType::UNTILSY:
+      return "'until'";
+    case TokenType::OFSY:
+      return "'of'";
+    case TokenType::DOSY:
+      return "'do'";
+    case TokenType::TOSY:
+      return "'to'";
+    case TokenType::DOWNTOSY:
+      return "'downto'";
+    case TokenType::THENSY:
+      return "'then'";
+    case TokenType::COMMENT:
+      return "a comment";
+  }
+  return "an unknown token";
+}
+
 const std::pair<std::string, std::string> Token::error_hint() const {
   switch (invalid) {
     case InvalidType::NotInvalid:
