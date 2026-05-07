@@ -11,15 +11,40 @@
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 
+enum class RunMode { Lexer, Parser };
+
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <filepath>"
-              << "\n";
-    return 1;
+  std::string source_name;
+  RunMode mode = RunMode::Parser;
+  bool dump = false;
+
+  for (int i = 1; i < argc; ++i) {
+    std::string arg = argv[i];
+    if (!arg.empty() && arg[0] == '-') {
+      if (arg == "--lexer" || arg == "-l") {
+        mode = RunMode::Lexer;
+      } else if (arg == "--parser" || arg == "-p") {
+        mode = RunMode::Parser;
+      } else if (arg == "--dump" || arg == "-d") {
+        dump = true;
+      } else {
+        std::cerr << "arionin: error: unknown flag '" << arg << "'\n";
+        return 1;
+      }
+    } else {
+      if (!source_name.empty()) {
+        std::cerr << "arionin: error: multiple source files specified\n";
+        return 1;
+      }
+      source_name = arg;
+    }
   }
 
-  const std::string source_name = argv[1];
-  const std::string output_path = source_name + ".token";
+  if (source_name.empty()) {
+    // Rencana interaktif, nanti dipikir lah
+    std::cerr << "arionin: interactive mode is not yet implemented\n";
+    return 1;
+  }
 
   try {
     std::ifstream stream(source_name);
@@ -39,14 +64,25 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    std::ofstream output_file(output_path);
-    if (!output_file.is_open()) {
-      throw std::runtime_error("Failed to open output file: " + output_path);
-    }
-
     auto tokens = lexer.tokens();
-    for (const auto& token : tokens) {
-      output_file << token << '\n';
+
+    if (mode == RunMode::Lexer) {
+      if (dump) {
+        for (const auto& token : tokens) {
+          std::cout << token << '\n';
+        }
+      } else {
+        const std::string token_path = source_name + ".token";
+        std::ofstream token_file(token_path);
+        if (!token_file.is_open()) {
+          throw std::runtime_error("arionin: error: cannot open output file '" +
+                                   token_path + "'");
+        }
+        for (const auto& token : tokens) {
+          token_file << token << '\n';
+        }
+      }
+      return 0;
     }
 
     parser::Parser parser(source_name, tokens, diagnoser);
@@ -57,7 +93,19 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    parser.program().print();
+    if (dump) {
+      parser.program().print();
+    } else {
+      const std::string ptree_path = source_name + ".ptree";
+      std::ofstream ptree_file(ptree_path);
+      if (!ptree_file.is_open()) {
+        throw std::runtime_error("arionin: error: cannot open output file '" +
+                                 ptree_path + "'");
+      }
+      auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());
+      parser.program().print();
+      std::cout.rdbuf(saved_buf);
+    }
 
     return 0;
 
