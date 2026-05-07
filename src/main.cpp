@@ -1,10 +1,11 @@
+#include <cerrno>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "arion_exceptions.hpp"
 #include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
@@ -22,16 +23,20 @@ int main(int argc, char* argv[]) {
 
   try {
     std::ifstream stream(source_name);
+    if (!stream.is_open()) {
+      throw std::runtime_error("arionin: error: cannot open '" + source_name +
+                               "': " + std::strerror(errno));
+    }
+
     io::CharMachine reader(stream, source_name);
     diag::Diagnoser diagnoser(source_name, reader.lines());
     lexer::Lexer lexer(reader, diagnoser);
 
-    try {
-      lexer.process();
-    } catch (const std::vector<InvalidTokenException>& err) {
-      for (const auto& e : err) {
-        std::cerr << e.what() << "\n";
-      }
+    lexer.process();
+
+    if (diagnoser.has_error()) {
+      std::cerr << diagnoser;
+      return 1;
     }
 
     std::ofstream output_file(output_path);
@@ -44,18 +49,18 @@ int main(int argc, char* argv[]) {
       output_file << token << '\n';
     }
 
-    parser::Parser parser(source_name, tokens);
+    parser::Parser parser(source_name, tokens, diagnoser);
     parser.parse();
+
+    if (diagnoser.has_error()) {
+      std::cerr << diagnoser;
+      return 1;
+    }
 
     parser.program().print();
 
-    std::cerr << diagnoser;
+    return 0;
 
-    return diagnoser.has_error() ? 1 : 0;
-
-  } catch (const ArionException& e) {
-    std::cerr << e.what() << "\n";
-    return 1;
   } catch (const std::exception& e) {
     std::cerr << e.what() << "\n";
     return 1;

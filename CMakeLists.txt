@@ -54,6 +54,7 @@ add_executable(arionin src/main.cpp)
 target_link_libraries(arion_diag PUBLIC arion_io)
 target_link_libraries(arion_lexer PUBLIC arion_diag)
 target_link_libraries(arion_parser PUBLIC arion_lexer)
+target_link_libraries(arion_parser PUBLIC arion_diag)
 target_link_libraries(arionin PRIVATE arion_parser)
 
 if(MSVC)
