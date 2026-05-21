@@ -3,8 +3,8 @@
 #include <memory>
 #include <vector>
 
-#include "ast_node.hpp"
-#include "expr_nodes.hpp"
+#include "ast/ast_node.hpp"
+#include "ast/expr_nodes.hpp"
 
 namespace ast {
 
@@ -20,7 +20,7 @@ class AssignNode : public StmtNode {
 
   AssignNode(std::unique_ptr<ExprNode> t, std::unique_ptr<ExprNode> e)
       : target(std::move(t)), expr(std::move(e)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class IfNode : public StmtNode {
@@ -34,7 +34,7 @@ class IfNode : public StmtNode {
       : condition(std::move(cond)),
         then_branch(std::move(then_b)),
         else_branch(std::move(else_b)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class WhileNode : public StmtNode {
@@ -44,7 +44,7 @@ class WhileNode : public StmtNode {
 
   WhileNode(std::unique_ptr<ExprNode> cond, std::unique_ptr<StmtNode> b)
       : condition(std::move(cond)), body(std::move(b)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class RepeatNode : public StmtNode {
@@ -55,7 +55,7 @@ class RepeatNode : public StmtNode {
   RepeatNode(std::vector<std::unique_ptr<StmtNode>> stmts,
              std::unique_ptr<ExprNode> cond)
       : statements(std::move(stmts)), condition(std::move(cond)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class ForNode : public StmtNode {
@@ -73,7 +73,7 @@ class ForNode : public StmtNode {
         final(std::move(end)),
         is_downto(down),
         body(std::move(b)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class ProcCallNode : public StmtNode {
@@ -83,7 +83,7 @@ class ProcCallNode : public StmtNode {
 
   ProcCallNode(lexer::Token i, std::vector<std::unique_ptr<ExprNode>> a)
       : id(i), args(std::move(a)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class CompoundStmtNode : public StmtNode {
@@ -92,7 +92,7 @@ class CompoundStmtNode : public StmtNode {
 
   CompoundStmtNode(std::vector<std::unique_ptr<StmtNode>> stmts)
       : statements(std::move(stmts)) {}
-  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
 }  // namespace ast

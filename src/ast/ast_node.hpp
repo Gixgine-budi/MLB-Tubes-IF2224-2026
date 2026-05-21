@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include "ast_visitor.hpp"
+#include "ast/ast_visitor.hpp"
 #include "lexer/token.hpp"
 
 namespace ast {
@@ -17,7 +17,7 @@ class AstNode {
    *
    * @param visitor The visitor instance that will visit this node.
    */
-  virtual void accept(ASTVisitor& visitor) = 0;
+  virtual void accept(ASTVisitor &visitor) = 0;
 
   // Optional: Location tracking for error reporting
   std::optional<lexer::Token> token;
