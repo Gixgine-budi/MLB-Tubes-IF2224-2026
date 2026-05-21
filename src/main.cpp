@@ -62,12 +62,12 @@ int main(int argc, char* argv[]) {
       } else if (arg == "--dump" || arg == "-d") {
         dump = true;
       } else {
-        std::cerr << "arionin: error: unknown flag '" << arg << "'\n";
+        std::cerr << "arion: error: unknown flag '" << arg << "'\n";
         return 1;
       }
     } else {
       if (!source_name.empty()) {
-        std::cerr << "arionin: error: multiple source files specified\n";
+        std::cerr << "arion: error: multiple source files specified\n";
         return 1;
       }
       source_name = arg;
@@ -75,15 +75,14 @@ int main(int argc, char* argv[]) {
   }
 
   if (source_name.empty()) {
-    // Rencana interaktif, nanti dipikir lah
-    std::cerr << "arionin: interactive mode is not yet implemented\n";
+    std::cerr << "arion: error: no source file specified\n";
     return 1;
   }
 
   try {
     std::ifstream stream(source_name);
     if (!stream.is_open()) {
-      throw std::runtime_error("arionin: error: cannot open '" + source_name +
+      throw std::runtime_error("arion: error: cannot open '" + source_name +
                                "': " + std::strerror(errno));
     }
 
@@ -109,7 +108,7 @@ int main(int argc, char* argv[]) {
         const std::string token_path = source_name + ".token";
         std::ofstream token_file(token_path);
         if (!token_file.is_open()) {
-          throw std::runtime_error("arionin: error: cannot open output file '" +
+          throw std::runtime_error("arion: error: cannot open output file '" +
                                    token_path + "'");
         }
         for (const auto& token : tokens) {
@@ -133,7 +132,7 @@ int main(int argc, char* argv[]) {
       const std::string ptree_path = source_name + ".ptree";
       std::ofstream ptree_file(ptree_path);
       if (!ptree_file.is_open()) {
-        throw std::runtime_error("arionin: error: cannot open output file '" +
+        throw std::runtime_error("arion: error: cannot open output file '" +
                                  ptree_path + "'");
       }
       auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());

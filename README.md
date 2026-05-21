@@ -58,17 +58,17 @@ cmake --build build
 
 * Langsung menjalankan executable. Hasil parsing ada di `path/to/source.txt.ptree`.
 ```sh
-./arionin path/to/source.txt
+./arion path/to/source.txt
 ```
 
 * Hanya menjalankan lexer untuk melihat token yang dihasilkan. Hasil token ada di `path/to/source.txt.tokens`.
 ```sh
-./arionin --lexer path/to/source.txt
+./arion --lexer path/to/source.txt
 ```
 
 * Menampilkan hasil ke terminal tanpa menyimpan ke file.
 ```sh
-./arionin --dump path/to/source.txt
+./arion --dump path/to/source.txt
 ```
 
 ## Kontributor
