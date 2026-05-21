@@ -107,14 +107,19 @@ std::ostream& operator<<(std::ostream& os, const ParseNode& node) {
   return os;
 }
 
-void ParseNode::print() const { printRecursive("", false); }
+void ParseNode::print(bool ascii) const { printRecursive("", false, ascii); }
 
-void ParseNode::printRecursive(const std::string& prefix, bool isLast) const {
-  std::cout << prefix << (isLast ? "└─ " : "├─ ") << *this << "\n";
+void ParseNode::printRecursive(const std::string& prefix, bool isLast,
+                               bool ascii) const {
+  std::cout << prefix
+            << (isLast ? (ascii ? "+- " : "└─ ") : (ascii ? "+- " : "├─ "))
+            << *this << "\n";
 
-  const std::string child_prefix = prefix + (isLast ? "  " : "│ ");
+  const std::string child_prefix =
+      prefix + (isLast ? (ascii ? "   " : "  ") : (ascii ? "|  " : "│ "));
   for (size_t i = 0; i < children_.size(); ++i) {
-    children_[i]->printRecursive(child_prefix, i == children_.size() - 1);
+    children_[i]->printRecursive(child_prefix, i == children_.size() - 1,
+                                 ascii);
   }
 }
 

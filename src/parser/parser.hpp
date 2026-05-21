@@ -32,11 +32,20 @@ class Parser {
   void parse();
 
   /**
+   * @brief Print the parse tree in a human readable format
+   *
+   *@param ascii whether to print the tree in ascii compatible only
+   */
+  void printParseTree(bool ascii = false) const {
+    program_.printRecursive("", true, ascii);
+  }
+
+  /**
    * @brief Returns the program parse tree root
    *
    * @return const ParseNode& reference to the parse tree root
    */
-  const ParseNode& program() { return program_; }
+  const ParseNode& program() const { return program_; }
 
  private:
   const std::string filename_;               //< Original source file name

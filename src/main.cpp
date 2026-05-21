@@ -1,4 +1,6 @@
+#include <cctype>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -6,12 +8,44 @@
 #include <string>
 #include <vector>
 
+#include "diagnoser/color.hpp"
 #include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 
 enum class RunMode { Lexer, Parser };
+
+namespace {
+
+bool hasUTF8(const char* value) {
+  if (value == nullptr) return false;
+
+  std::string normalized(value);
+  for (char& ch : normalized) {
+    ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+  }
+
+  return normalized.find("UTF-8") != std::string::npos ||
+         normalized.find("UTF8") != std::string::npos;
+}
+
+bool useASCII() {
+  if (!diag::color::enabled()) return true;
+
+  const char* lc_all = std::getenv("LC_ALL");
+  if (lc_all != nullptr && lc_all[0] != '\0') return hasUTF8(lc_all);
+
+  const char* lc_ctype = std::getenv("LC_CTYPE");
+  if (lc_ctype != nullptr && lc_ctype[0] != '\0') return hasUTF8(lc_ctype);
+
+  const char* lang = std::getenv("LANG");
+  if (lang != nullptr && lang[0] != '\0') return hasUTF8(lang);
+
+  return false;
+}
+
+}  // namespace
 
 int main(int argc, char* argv[]) {
   std::string source_name;
@@ -94,7 +128,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (dump) {
-      parser.program().print();
+      parser.printParseTree(useASCII());
     } else {
       const std::string ptree_path = source_name + ".ptree";
       std::ofstream ptree_file(ptree_path);
@@ -103,7 +137,7 @@ int main(int argc, char* argv[]) {
                                  ptree_path + "'");
       }
       auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());
-      parser.program().print();
+      parser.printParseTree();
       std::cout.rdbuf(saved_buf);
     }
 
