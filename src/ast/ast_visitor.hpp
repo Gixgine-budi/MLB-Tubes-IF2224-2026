@@ -8,7 +8,16 @@ class AstNode;
 
 class ProgramNode;
 class BlockNode;
+
+// Type Specifications
+
 class TypeSpecNode;
+class SimpleTypeSpecNode;
+class SubrangeTypeSpecNode;
+class ArrayTypeSpecNode;
+class RecordTypeSpecNode;
+class EnumTypeSpecNode;
+
 class VarDeclNode;
 class TypeDeclNode;
 class ProcDeclNode;
@@ -46,7 +55,13 @@ class ASTVisitor {
 
   virtual void visit(ProgramNode &node) = 0;
   virtual void visit(BlockNode &node) = 0;
-  virtual void visit(TypeSpecNode &node) = 0;
+
+  virtual void visit(SimpleTypeSpecNode &node) = 0;
+  virtual void visit(SubrangeTypeSpecNode &node) = 0;
+  virtual void visit(ArrayTypeSpecNode &node) = 0;
+  virtual void visit(RecordTypeSpecNode &node) = 0;
+  virtual void visit(EnumTypeSpecNode &node) = 0;
+
   virtual void visit(VarDeclNode &node) = 0;
   virtual void visit(TypeDeclNode &node) = 0;
   virtual void visit(ProcDeclNode &node) = 0;

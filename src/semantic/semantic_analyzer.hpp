@@ -26,9 +26,16 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   void visit(ast::ProgramNode &node) override;
   void visit(ast::BlockNode &node) override;
 
+  // Type Specifications
+
+  void visit(ast::SimpleTypeSpecNode &node) override;
+  void visit(ast::SubrangeTypeSpecNode &node) override;
+  void visit(ast::ArrayTypeSpecNode &node) override;
+  void visit(ast::RecordTypeSpecNode &node) override;
+  void visit(ast::EnumTypeSpecNode &node) override;
+
   // Declarations
 
-  void visit(ast::TypeSpecNode &node) override;
   void visit(ast::VarDeclNode &node) override;
   void visit(ast::TypeDeclNode &node) override;
   void visit(ast::ProcDeclNode &node) override;
@@ -59,19 +66,19 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   SymbolTable sym_table;
   bool has_errors_ = false;
 
-  void reportError(const std::string& message);
-  int resolveTypeSpec(ast::TypeSpecNode& spec);
-  int resolveSimpleTypeName(const std::string& name);
+  void reportError(const std::string &message);
+  int resolveTypeSpec(ast::TypeSpecNode &spec);
+  int resolveSimpleTypeName(const std::string &name);
   bool typesCompatible(int left, int right) const;
   bool assignmentCompatible(int target, int value) const;
-  void visitExpr(ast::ExprNode& expr);
-  void visitStmt(ast::StmtNode& stmt);
+  void visitExpr(ast::ExprNode &expr);
+  void visitStmt(ast::StmtNode &stmt);
 
   void checkTypeCompatibility(int expected_type, int actual_type,
-                              const std::string& context);
+                              const std::string &context);
   void enterScope();
   void leaveScope();
-  int get_base_type(const std::string& type_name);
+  int get_base_type(const std::string &type_name);
   bool isAssignmentCompatible(int target_type, int expr_type);
 };
 

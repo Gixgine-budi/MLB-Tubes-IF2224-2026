@@ -1,7 +1,7 @@
-#include "semantic/semantic_analyzer.hpp"
-
 #include <string>
 
+#include "ast/type_nodes.hpp"
+#include "semantic/semantic_analyzer.hpp"
 #include "semantic/symtable_entries.hpp"
 
 namespace semantic {
@@ -41,42 +41,41 @@ int SemanticAnalyzer::resolveTypeSpec(ast::TypeSpecNode& spec) {
   return spec.expression_type;
 }
 
-void SemanticAnalyzer::visit(ast::TypeSpecNode& node) {
-  switch (node.kind) {
-    case ast::TypeSpecNode::Kind::Simple:
-      node.expression_type = resolveSimpleTypeName(node.name.lexeme);
-      break;
-    case ast::TypeSpecNode::Kind::Subrange:
-      node.expression_type = BuiltinType::Subrange;
-      if (node.low != nullptr) {
-        node.low->accept(*this);
-      }
-      if (node.high != nullptr) {
-        node.high->accept(*this);
-      }
-      break;
-    case ast::TypeSpecNode::Kind::Array: {
-      node.expression_type = BuiltinType::Array;
-      if (node.index_type != nullptr) {
-        resolveTypeSpec(*node.index_type);
-      }
-      if (node.element_type != nullptr) {
-        resolveTypeSpec(*node.element_type);
-      }
-      break;
-    }
-    case ast::TypeSpecNode::Kind::Record:
-      node.expression_type = BuiltinType::Record;
-      for (auto& field : node.fields) {
-        if (field.second != nullptr) {
-          resolveTypeSpec(*field.second);
-        }
-      }
-      break;
-    case ast::TypeSpecNode::Kind::Enumerated:
-      node.expression_type = BuiltinType::Enumerated;
-      break;
+void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
+  node.expression_type = resolveSimpleTypeName(node.name.lexeme);
+}
+
+void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
+  node.expression_type = BuiltinType::Subrange;
+  if (node.low != nullptr) {
+    node.low->accept(*this);
   }
+  if (node.high != nullptr) {
+    node.high->accept(*this);
+  }
+}
+
+void SemanticAnalyzer::visit(ast::ArrayTypeSpecNode& node) {
+  node.expression_type = BuiltinType::Array;
+  if (node.index_type != nullptr) {
+    resolveTypeSpec(*node.index_type);
+  }
+  if (node.element_type != nullptr) {
+    resolveTypeSpec(*node.element_type);
+  }
+}
+
+void SemanticAnalyzer::visit(ast::RecordTypeSpecNode& node) {
+  node.expression_type = BuiltinType::Record;
+  for (auto& field : node.fields) {
+    if (field.second != nullptr) {
+      resolveTypeSpec(*field.second);
+    }
+  }
+}
+
+void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
+  node.expression_type = BuiltinType::Enumerated;
 }
 
 void SemanticAnalyzer::visit(ast::ProgramNode& node) {
@@ -86,7 +85,8 @@ void SemanticAnalyzer::visit(ast::ProgramNode& node) {
                   node.identifier.lexeme + "'");
     }
   } else {
-    sym_table.enterTab(node.identifier.lexeme, ObjClass::Type, BuiltinType::Program);
+    sym_table.enterTab(node.identifier.lexeme, ObjClass::Type,
+                       BuiltinType::Program);
   }
 
   if (node.block == nullptr) {
