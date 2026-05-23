@@ -18,6 +18,7 @@ class ArrayTypeSpecNode;
 class RecordTypeSpecNode;
 class EnumTypeSpecNode;
 
+class ConstDeclNode;
 class VarDeclNode;
 class TypeDeclNode;
 class ProcDeclNode;
@@ -62,6 +63,7 @@ class ASTVisitor {
   virtual void visit(RecordTypeSpecNode &node) = 0;
   virtual void visit(EnumTypeSpecNode &node) = 0;
 
+  virtual void visit(ConstDeclNode &node) = 0;
   virtual void visit(VarDeclNode &node) = 0;
   virtual void visit(TypeDeclNode &node) = 0;
   virtual void visit(ProcDeclNode &node) = 0;

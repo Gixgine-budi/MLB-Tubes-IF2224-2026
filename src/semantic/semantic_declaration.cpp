@@ -78,6 +78,26 @@ void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
   node.expression_type = BuiltinType::Enumerated;
 }
 
+void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
+  if (node.value == nullptr) {
+    reportError("invalid constant definition for '" + node.identifier.lexeme +
+                "'");
+    return;
+  }
+
+  node.value->accept(*this);
+  const int const_type = node.value->expression_type;
+
+  if (sym_table.lookup(node.identifier.lexeme)) {
+    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    return;
+  }
+
+  node.tab_index = sym_table.enterTab(node.identifier.lexeme,
+                                      ObjClass::Constant, const_type);
+  node.expression_type = const_type;
+}
+
 void SemanticAnalyzer::visit(ast::ProgramNode& node) {
   if (auto existing = sym_table.lookup(node.identifier.lexeme)) {
     if (existing->obj != ObjClass::Type) {

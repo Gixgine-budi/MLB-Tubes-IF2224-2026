@@ -36,6 +36,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
 
   // Declarations
 
+  void visit(ast::ConstDeclNode &node) override;
   void visit(ast::VarDeclNode &node) override;
   void visit(ast::TypeDeclNode &node) override;
   void visit(ast::ProcDeclNode &node) override;

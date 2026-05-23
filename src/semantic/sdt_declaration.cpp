@@ -156,7 +156,17 @@ std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
   if (node.type() != parser::NodeType::DeclarationPart) return decls;
 
   for (const auto &child : node.children()) {
-    if (child->type() == parser::NodeType::VarDeclaration) {
+    if (child->type() == parser::NodeType::ConstDeclaration) {
+      size_t child_count = child->children().size();
+      for (size_t i = 1; i + 2 < child_count; i += 4) {
+        const auto &id_node = child->children()[i];
+        const auto &const_node = child->children()[i + 2];
+        if (!id_node->token().has_value()) continue;
+
+        decls.push_back(std::make_unique<ast::ConstDeclNode>(
+            id_node->token().value(), buildConstantExpr(*const_node)));
+      }
+    } else if (child->type() == parser::NodeType::VarDeclaration) {
       size_t child_count = child->children().size();
       for (size_t i = 1; i + 2 < child_count; i += 4) {
         const auto &id_list_node = child->children()[i];

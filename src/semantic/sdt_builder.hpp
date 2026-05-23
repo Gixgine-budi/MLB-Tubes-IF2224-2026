@@ -132,6 +132,14 @@ class SDTBuilder {
   Ptr<ast::IfNode> buildIf(const parser::ParseNode &node);
 
   /**
+   * @brief Build case/of statement by lowering it into nested If nodes.
+   *
+   * @param node Parse node of type NodeType::CaseStatement.
+   * @return Lowered statement AST node.
+   */
+  Ptr<ast::StmtNode> buildCase(const parser::ParseNode &node);
+
+  /**
    * @brief Build while/do statement AST node.
    *
    * @param node Parse node of type NodeType::WhileStatement.

@@ -1,3 +1,4 @@
+#include <functional>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -25,6 +26,50 @@ Ptr<ast::ExprNode> buildSimpleExpressionLocal(SDTBuilder& builder,
                                               const parser::ParseNode& node);
 Ptr<ast::ExprNode> buildExpressionLocal(SDTBuilder& builder,
                                         const parser::ParseNode& node);
+
+Ptr<ast::ExprNode> buildCaseConstantExpr(const parser::ParseNode& node) {
+  if (node.type() != parser::NodeType::Constant || node.children().empty()) {
+    return nullptr;
+  }
+
+  const auto& children = node.children();
+  const auto& first = children[0];
+  if (first->type() != parser::NodeType::TokenNode || !first->token()) {
+    return nullptr;
+  }
+
+  const lexer::Token tok = first->token().value();
+  if ((tok.type == TokenType::PLUS || tok.type == TokenType::MINUS) &&
+      children.size() >= 2 &&
+      children[1]->type() == parser::NodeType::TokenNode &&
+      children[1]->token()) {
+    const lexer::Token body = children[1]->token().value();
+    Ptr<ast::ExprNode> base;
+    if (body.type == TokenType::INTCON || body.type == TokenType::REALCON) {
+      base = std::make_unique<ast::NumberNode>(body,
+                                               body.type == TokenType::REALCON);
+    } else if (body.type == TokenType::CHARCON ||
+               body.type == TokenType::STRING) {
+      base = std::make_unique<ast::StringNode>(body);
+    } else {
+      base = std::make_unique<ast::IdentNode>(body);
+    }
+    return std::make_unique<ast::UnaryOpNode>(tok, std::move(base));
+  }
+
+  if (tok.type == TokenType::INTCON || tok.type == TokenType::REALCON) {
+    return std::make_unique<ast::NumberNode>(tok,
+                                             tok.type == TokenType::REALCON);
+  }
+  if (tok.type == TokenType::CHARCON || tok.type == TokenType::STRING) {
+    return std::make_unique<ast::StringNode>(tok);
+  }
+  return std::make_unique<ast::IdentNode>(tok);
+}
+
+lexer::Token syntheticToken(TokenType type, const char* lexeme) {
+  return lexer::Token{type, lexer::InvalidType::NotInvalid, lexeme, 0, 0};
+}
 
 Ptr<ast::ExprNode> buildIndexExpr(const parser::ParseNode& index_list,
                                   SDTBuilder& builder) {
@@ -286,6 +331,8 @@ Ptr<ast::StmtNode> SDTBuilder::buildStatement(const parser::ParseNode& node) {
         return buildAssign(*child);
       case parser::NodeType::IfStatement:
         return buildIf(*child);
+      case parser::NodeType::CaseStatement:
+        return buildCase(*child);
       case parser::NodeType::WhileStatement:
         return buildWhile(*child);
       case parser::NodeType::RepeatStatement:
@@ -364,6 +411,68 @@ Ptr<ast::IfNode> SDTBuilder::buildIf(const parser::ParseNode& node) {
   }
   return std::make_unique<ast::IfNode>(
       std::move(condition), std::move(then_branch), std::move(else_branch));
+}
+
+Ptr<ast::StmtNode> SDTBuilder::buildCase(const parser::ParseNode& node) {
+  const auto* selector = sdt::findChild(node, parser::NodeType::Expression);
+  const auto* first_case = sdt::findChild(node, parser::NodeType::CaseBlock);
+  if (selector == nullptr || first_case == nullptr) {
+    return nullptr;
+  }
+
+  std::function<Ptr<ast::StmtNode>(const parser::ParseNode&)> lower_case_block;
+  lower_case_block =
+      [&](const parser::ParseNode& case_block) -> Ptr<ast::StmtNode> {
+    std::vector<Ptr<ast::ExprNode>> labels;
+    Ptr<ast::StmtNode> then_stmt;
+    Ptr<ast::StmtNode> else_stmt;
+
+    for (const auto& child : case_block.children()) {
+      if (child->type() == parser::NodeType::Constant) {
+        if (auto expr = buildCaseConstantExpr(*child)) {
+          labels.push_back(std::move(expr));
+        }
+      } else if (child->type() == parser::NodeType::Statement &&
+                 then_stmt == nullptr) {
+        then_stmt = buildStatement(*child);
+      } else if (child->type() == parser::NodeType::CaseBlock) {
+        else_stmt = lower_case_block(*child);
+      }
+    }
+
+    if (then_stmt == nullptr) {
+      return else_stmt;
+    }
+
+    Ptr<ast::ExprNode> condition;
+    const lexer::Token eql_tok = syntheticToken(TokenType::EQL, "=");
+    const lexer::Token or_tok = syntheticToken(TokenType::ORSY, "or");
+
+    for (auto& label : labels) {
+      auto lhs = buildExpressionLocal(*this, *selector);
+      if (lhs == nullptr || label == nullptr) {
+        continue;
+      }
+
+      auto equals_expr = std::make_unique<ast::BinOpNode>(
+          std::move(lhs), eql_tok, std::move(label));
+      if (condition == nullptr) {
+        condition = std::move(equals_expr);
+      } else {
+        condition = std::make_unique<ast::BinOpNode>(
+            std::move(condition), or_tok, std::move(equals_expr));
+      }
+    }
+
+    if (condition == nullptr) {
+      return then_stmt;
+    }
+
+    return std::make_unique<ast::IfNode>(
+        std::move(condition), std::move(then_stmt), std::move(else_stmt));
+  };
+
+  return lower_case_block(*first_case);
 }
 
 Ptr<ast::WhileNode> SDTBuilder::buildWhile(const parser::ParseNode& node) {

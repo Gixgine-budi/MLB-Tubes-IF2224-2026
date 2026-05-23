@@ -4,11 +4,23 @@
 #include <vector>
 
 #include "ast/ast_node.hpp"
+#include "ast/expr_nodes.hpp"
 #include "ast/stmt_nodes.hpp"
 #include "ast/type_nodes.hpp"
 #include "lexer/token.hpp"
 
 namespace ast {
+
+class ConstDeclNode : public AstNode {
+ public:
+  lexer::Token identifier;
+  std::unique_ptr<ExprNode> value;
+
+  ConstDeclNode(lexer::Token id, std::unique_ptr<ExprNode> val)
+      : identifier(id), value(std::move(val)) {}
+
+  void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
+};
 
 class VarDeclNode : public AstNode {
  public:
