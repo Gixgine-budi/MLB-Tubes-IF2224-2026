@@ -97,4 +97,20 @@ struct BtabEntry {
   int vsze; // Total variable block size
 };
 
-} // namespace semantic
+namespace BuiltinType {
+constexpr int Program = 0;
+constexpr int Integer = 1;
+constexpr int Real = 2;
+constexpr int Boolean = 3;
+constexpr int Char = 4;
+constexpr int String = 5;
+constexpr int Subrange = 6;
+constexpr int Array = 7;
+constexpr int Record = 8;
+constexpr int Enumerated = 9;
+constexpr int Void = 10;
+}  // namespace BuiltinType
+
+constexpr int kTabReservedCount = 33;
+
+}  // namespace semantic

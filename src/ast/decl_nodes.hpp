@@ -9,6 +9,25 @@
 
 namespace ast {
 
+class TypeSpecNode : public AstNode {
+ public:
+  enum class Kind { Simple, Subrange, Array, Record, Enumerated };
+
+  Kind kind = Kind::Simple;
+  lexer::Token name;  // simple type ident or type name
+  std::unique_ptr<AstNode> low;
+  std::unique_ptr<AstNode> high;
+  std::unique_ptr<TypeSpecNode> index_type;
+  std::unique_ptr<TypeSpecNode> element_type;
+  std::vector<std::pair<std::vector<lexer::Token>, std::unique_ptr<TypeSpecNode>>>
+      fields;
+  std::vector<lexer::Token> enum_literals;
+
+  explicit TypeSpecNode(Kind k) : kind(k) {}
+
+  void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
 class VarDeclNode : public AstNode {
  public:
   std::vector<lexer::Token> identifiers;

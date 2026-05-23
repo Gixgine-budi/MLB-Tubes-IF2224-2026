@@ -54,6 +54,7 @@ class SDTBuilder {
    */
   std::vector<Ptr<ast::AstNode>> buildDeclarations(
       const parser::ParseNode &node);
+  Ptr<ast::TypeSpecNode> buildTypeSpec(const parser::ParseNode &node);
 
   /**
    * @brief Build one variable declaration AST node.

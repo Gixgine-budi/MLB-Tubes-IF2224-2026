@@ -29,6 +29,9 @@ class AstNode {
 
   /// Optional: Type decoration (populated during Semantic Analysis)
   int expression_type = 0;
+
+  /// Index into symbol table tab (0 if not bound)
+  int tab_index = 0;
 };
 
 }  // namespace ast

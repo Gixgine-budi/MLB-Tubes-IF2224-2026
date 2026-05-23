@@ -28,6 +28,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
 
   // Declarations
 
+  void visit(ast::TypeSpecNode &node) override;
   void visit(ast::VarDeclNode &node) override;
   void visit(ast::TypeDeclNode &node) override;
   void visit(ast::ProcDeclNode &node) override;
@@ -56,10 +57,18 @@ class SemanticAnalyzer : public ast::ASTVisitor {
 
  private:
   SymbolTable sym_table;
+  bool has_errors_ = false;
 
-  // Helper methods for internal state management
+  void reportError(const std::string& message);
+  int resolveTypeSpec(ast::TypeSpecNode& spec);
+  int resolveSimpleTypeName(const std::string& name);
+  bool typesCompatible(int left, int right) const;
+  bool assignmentCompatible(int target, int value) const;
+  void visitExpr(ast::ExprNode& expr);
+  void visitStmt(ast::StmtNode& stmt);
+
   void checkTypeCompatibility(int expected_type, int actual_type,
-                              const std::string &context);
+                              const std::string& context);
   void enterScope();
   void leaveScope();
   int get_base_type(const std::string& type_name);
