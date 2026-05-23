@@ -31,6 +31,7 @@ class SDTBuilder {
   // Declarations
   std::vector<Ptr<ast::AstNode>> buildDeclarations(
       const parser::ParseNode &node);
+  Ptr<ast::TypeSpecNode> buildTypeSpec(const parser::ParseNode &node);
   Ptr<ast::VarDeclNode> buildVarDecl(const parser::ParseNode &node);
   Ptr<ast::TypeDeclNode> buildTypeDecl(const parser::ParseNode &node);
   Ptr<ast::ProcDeclNode> buildProcDecl(const parser::ParseNode &node);

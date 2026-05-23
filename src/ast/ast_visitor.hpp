@@ -7,6 +7,7 @@ class AstNode;
 // Forward declarations for concrete nodes
 class ProgramNode;
 class BlockNode;
+class TypeSpecNode;
 class VarDeclNode;
 class TypeDeclNode;
 class ProcDeclNode;
@@ -37,6 +38,7 @@ class ASTVisitor {
 
   virtual void visit(ProgramNode &node) = 0;
   virtual void visit(BlockNode &node) = 0;
+  virtual void visit(TypeSpecNode &node) = 0;
   virtual void visit(VarDeclNode &node) = 0;
   virtual void visit(TypeDeclNode &node) = 0;
   virtual void visit(ProcDeclNode &node) = 0;
