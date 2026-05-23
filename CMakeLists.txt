@@ -37,6 +37,7 @@ add_library(
 add_library(
   arion_semantic
   src/semantic/sdt_builder.cpp
+  src/semantic/sdt_type_spec.cpp
   src/semantic/sdt_declaration.cpp
   src/semantic/sdt_statement.cpp
   src/semantic/sdt_expression.cpp

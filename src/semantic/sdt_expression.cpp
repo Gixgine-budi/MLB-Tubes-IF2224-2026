@@ -36,7 +36,7 @@ Ptr<ast::ExprNode> SDTBuilder::buildSimpleExpression(
   auto term = buildTerm(*node.children()[i++]);
   Ptr<ast::ExprNode> current = std::move(term);
 
-  if (unary_op.type == lexer::TokenType::INVALID) {
+  if (unary_op.type != lexer::TokenType::INVALID) {
     current = std::make_unique<ast::UnaryOpNode>(unary_op, std::move(current));
   }
 
@@ -109,41 +109,6 @@ Ptr<ast::ExprNode> SDTBuilder::buildFactor(const parser::ParseNode &node) {
   }
 
   return nullptr;
-}
-
-Ptr<ast::ExprNode> SDTBuilder::buildVariableAccess(
-    const parser::ParseNode &node) {
-  if (node.children().empty()) return nullptr;
-
-  Ptr<ast::ExprNode> var_expr =
-      std::make_unique<ast::IdentNode>(node.children()[0]->token().value());
-
-  for (size_t i = 1; i < node.children().size(); ++i) {
-    auto &comp = *node.children()[i];
-    if (comp.type() == parser::NodeType::ComponentVariable) {
-      auto &comp_children = comp.children();
-      if (comp_children[0]->type() == parser::NodeType::TokenNode) {
-        auto t = comp_children[0]->token().value().type;
-        if (t == lexer::TokenType::LBRACK) {
-          auto &idx_list = *comp_children[1];
-          std::vector<Ptr<ast::ExprNode>> indices;
-          for (const auto &expr_node : idx_list.children()) {
-            if (expr_node->type() == parser::NodeType::Expression) {
-              indices.push_back(buildExpression(*expr_node));
-            }
-          }
-          var_expr = std::make_unique<ast::ArrayAccessNode>(std::move(var_expr),
-                                                            std::move(indices));
-        } else if (t == lexer::TokenType::PERIOD) {
-          auto field_id = comp_children[1]->token().value();
-          var_expr = std::make_unique<ast::RecordAccessNode>(
-              std::move(var_expr), field_id);
-        }
-      }
-    }
-  }
-
-  return var_expr;
 }
 
 }  // namespace semantic

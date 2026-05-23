@@ -37,29 +37,10 @@ const parser::ParseNode* findChild(const parser::ParseNode& parent,
   return nullptr;
 }
 
-std::vector<const parser::ParseNode*> childrenOfType(
-    const parser::ParseNode& parent, parser::NodeType type) {
-  std::vector<const parser::ParseNode*> out;
-  for (const auto& child : parent.children()) {
-    if (child->type() == type) {
-      out.push_back(child.get());
-    }
-  }
-  return out;
-}
+}  // namespace
 
-Ptr<ast::ExprNode> buildVariableAccessLocal(const parser::ParseNode& node,
-                                            SDTBuilder& builder);
-Ptr<ast::ExprNode> buildFactorLocal(SDTBuilder& builder,
-                                    const parser::ParseNode& node);
-Ptr<ast::ExprNode> buildTermLocal(SDTBuilder& builder,
-                                  const parser::ParseNode& node);
-Ptr<ast::ExprNode> buildSimpleExpressionLocal(SDTBuilder& builder,
-                                              const parser::ParseNode& node);
-Ptr<ast::ExprNode> buildExpressionLocal(SDTBuilder& builder,
-                                        const parser::ParseNode& node);
-
-Ptr<ast::ExprNode> buildCaseConstantExpr(const parser::ParseNode& node) {
+Ptr<ast::ExprNode> SDTBuilder::buildCaseConstantExpr(
+    const parser::ParseNode& node) {
   if (node.type() != parser::NodeType::Constant || node.children().empty()) {
     return nullptr;
   }
@@ -99,251 +80,63 @@ Ptr<ast::ExprNode> buildCaseConstantExpr(const parser::ParseNode& node) {
   return std::make_unique<ast::IdentNode>(tok);
 }
 
-Ptr<ast::ExprNode> buildIndexExpr(const parser::ParseNode& index_list,
-                                  SDTBuilder& builder) {
-  for (const auto& child : index_list.children()) {
-    if (child->type() == parser::NodeType::Expression) {
-      return buildExpressionLocal(builder, *child);
-    }
-    if (auto tok = tokenOf(*child)) {
-      if (tok->type == TokenType::INTCON || tok->type == TokenType::CHARCON ||
-          tok->type == TokenType::IDENT) {
-        if (tok->type == TokenType::INTCON) {
-          return std::make_unique<ast::NumberNode>(*tok, false);
-        }
-        if (tok->type == TokenType::CHARCON) {
-          return std::make_unique<ast::StringNode>(*tok);
-        }
-        return std::make_unique<ast::IdentNode>(*tok);
-      }
-    }
-  }
-  return nullptr;
-}
-
-Ptr<ast::ExprNode> buildFactorLocal(SDTBuilder& builder,
-                                    const parser::ParseNode& node) {
-  const auto& children = node.children();
-  if (!children.empty()) {
-    if (auto tok = tokenOf(*children.front())) {
-      if (tok->type == TokenType::NOTSY && children.size() >= 2) {
-        auto operand = buildFactorLocal(builder, *children.back());
-        if (operand != nullptr) {
-          return std::make_unique<ast::UnaryOpNode>(*tok, std::move(operand));
-        }
-      }
-    }
-  }
-
-  for (const auto& child : children) {
-    if (auto tok = tokenOf(*child)) {
-      switch (tok->type) {
-        case TokenType::INTCON:
-          return std::make_unique<ast::NumberNode>(*tok, false);
-        case TokenType::REALCON:
-          return std::make_unique<ast::NumberNode>(*tok, true);
-        case TokenType::CHARCON:
-        case TokenType::STRING:
-          return std::make_unique<ast::StringNode>(*tok);
-        default:
-          break;
-      }
-    }
-
-    switch (child->type()) {
-      case parser::NodeType::Expression:
-        return buildExpressionLocal(builder, *child);
-      case parser::NodeType::FunctionCall: {
-        lexer::Token name{};
-        std::vector<Ptr<ast::ExprNode>> args;
-        for (const auto& part : child->children()) {
-          if (auto tok = tokenOf(*part)) {
-            if (tok->type == TokenType::IDENT && name.lexeme.empty()) {
-              name = *tok;
-            }
-          } else if (part->type() == parser::NodeType::ParameterList) {
-            for (const auto& expr_child : part->children()) {
-              if (expr_child->type() == parser::NodeType::Expression) {
-                if (auto arg = buildExpressionLocal(builder, *expr_child)) {
-                  args.push_back(std::move(arg));
-                }
-              }
-            }
-          }
-        }
-        if (!name.lexeme.empty()) {
-          return std::make_unique<ast::FuncCallNode>(name, std::move(args));
-        }
-        break;
-      }
-      case parser::NodeType::Variable:
-        return buildVariableAccessLocal(*child, builder);
-      default:
-        break;
-    }
-  }
-
-  return nullptr;
-}
-
-Ptr<ast::ExprNode> buildTermLocal(SDTBuilder& builder,
-                                  const parser::ParseNode& node) {
-  std::vector<const parser::ParseNode*> parts;
-  for (const auto& child : node.children()) {
-    if (child->type() == parser::NodeType::Factor ||
-        child->type() == parser::NodeType::MultiplicativeOperator) {
-      parts.push_back(child.get());
-    }
-  }
-
-  if (parts.empty()) {
-    return nullptr;
-  }
-
-  Ptr<ast::ExprNode> result = buildFactorLocal(builder, *parts.front());
-  for (size_t i = 1; i + 1 < parts.size(); i += 2) {
-    const auto* op_node = parts[i];
-    const auto* rhs_node = parts[i + 1];
-    lexer::Token op{};
-    if (const auto* op_tok = findChild(*op_node, parser::NodeType::TokenNode)) {
-      if (auto tok = tokenOf(*op_tok)) {
-        op = *tok;
-      }
-    }
-    auto rhs = buildFactorLocal(builder, *rhs_node);
-    if (result != nullptr && rhs != nullptr) {
-      result = std::make_unique<ast::BinOpNode>(std::move(result), op,
-                                                std::move(rhs));
-    }
-  }
-  return result;
-}
-
-Ptr<ast::ExprNode> buildSimpleExpressionLocal(SDTBuilder& builder,
-                                              const parser::ParseNode& node) {
-  Ptr<ast::ExprNode> result;
-  size_t idx = 0;
-  const auto& children = node.children();
-
-  if (!children.empty() &&
-      children.front()->type() == parser::NodeType::TokenNode) {
-    if (auto tok = tokenOf(*children.front())) {
-      if (tok->type == TokenType::PLUS || tok->type == TokenType::MINUS) {
-        idx = 1;
-      }
-    }
-  }
-
-  for (; idx < children.size(); ++idx) {
-    if (children[idx]->type() == parser::NodeType::Term) {
-      result = buildTermLocal(builder, *children[idx]);
-      break;
-    }
-  }
-
-  for (; idx < children.size(); ++idx) {
-    if (children[idx]->type() == parser::NodeType::AdditiveOperator &&
-        idx + 1 < children.size() &&
-        children[idx + 1]->type() == parser::NodeType::Term) {
-      lexer::Token op{};
-      if (const auto* op_tok =
-              findChild(*children[idx], parser::NodeType::TokenNode)) {
-        if (auto tok = tokenOf(*op_tok)) {
-          op = *tok;
-        }
-      }
-      auto rhs = buildTermLocal(builder, *children[idx + 1]);
-      if (result != nullptr && rhs != nullptr) {
-        result = std::make_unique<ast::BinOpNode>(std::move(result), op,
-                                                  std::move(rhs));
-      }
-      ++idx;
-    }
-  }
-
-  return result;
-}
-
-Ptr<ast::ExprNode> buildExpressionLocal(SDTBuilder& builder,
-                                        const parser::ParseNode& node) {
-  const auto* simple = findChild(node, parser::NodeType::SimpleExpression);
-  if (simple == nullptr) {
-    return nullptr;
-  }
-
-  auto left = buildSimpleExpressionLocal(builder, *simple);
-  const auto* rel = findChild(node, parser::NodeType::RelationalOperator);
-  if (rel == nullptr) {
-    return left;
-  }
-
-  const auto right_simples =
-      childrenOfType(node, parser::NodeType::SimpleExpression);
-  if (right_simples.size() < 2) {
-    return left;
-  }
-
-  lexer::Token op{};
-  if (const auto* op_tok = findChild(*rel, parser::NodeType::TokenNode)) {
-    if (auto tok = tokenOf(*op_tok)) {
-      op = *tok;
-    }
-  }
-
-  auto right = buildSimpleExpressionLocal(builder, *right_simples.back());
-  if (left != nullptr && right != nullptr) {
-    return std::make_unique<ast::BinOpNode>(std::move(left), op,
-                                            std::move(right));
-  }
-  return left;
-}
-
-Ptr<ast::ExprNode> buildVariableAccessLocal(const parser::ParseNode& node,
-                                            SDTBuilder& builder) {
+Ptr<ast::ExprNode> SDTBuilder::buildVariableAccess(
+    const parser::ParseNode& node) {
   Ptr<ast::ExprNode> current;
+
   for (const auto& child : node.children()) {
     if (auto tok = tokenOf(*child)) {
       if (tok->type == TokenType::IDENT && current == nullptr) {
         current = std::make_unique<ast::IdentNode>(*tok);
       }
-    } else if (child->type() == parser::NodeType::ComponentVariable) {
-      const auto* index_list = findChild(*child, parser::NodeType::IndexList);
-      if (index_list != nullptr) {
-        std::vector<Ptr<ast::ExprNode>> indices;
-        if (auto idx = buildIndexExpr(*index_list, builder)) {
-          indices.push_back(std::move(idx));
+      continue;
+    }
+
+    if (child->type() != parser::NodeType::ComponentVariable ||
+        current == nullptr) {
+      continue;
+    }
+
+    const auto* index_list = findChild(*child, parser::NodeType::IndexList);
+    if (index_list != nullptr) {
+      std::vector<Ptr<ast::ExprNode>> indices;
+      for (const auto& part : index_list->children()) {
+        if (part->type() == parser::NodeType::Expression) {
+          if (auto idx = buildExpression(*part)) {
+            indices.push_back(std::move(idx));
+          }
+          continue;
         }
-        for (const auto& part : index_list->children()) {
-          if (part->type() == parser::NodeType::Expression) {
-            if (auto idx = buildExpressionLocal(builder, *part)) {
-              indices.push_back(std::move(idx));
-            }
+
+        if (auto tok = tokenOf(*part)) {
+          if (tok->type == TokenType::INTCON) {
+            indices.push_back(std::make_unique<ast::NumberNode>(*tok, false));
+          } else if (tok->type == TokenType::CHARCON) {
+            indices.push_back(std::make_unique<ast::StringNode>(*tok));
+          } else if (tok->type == TokenType::IDENT) {
+            indices.push_back(std::make_unique<ast::IdentNode>(*tok));
           }
         }
-        if (current != nullptr) {
-          current = std::make_unique<ast::ArrayAccessNode>(std::move(current),
-                                                           std::move(indices));
-        }
-      } else {
-        for (const auto& part : child->children()) {
-          if (auto tok = tokenOf(*part)) {
-            if (tok->type == TokenType::IDENT && current != nullptr) {
-              current = std::make_unique<ast::RecordAccessNode>(
-                  std::move(current), *tok);
-            }
-          }
+      }
+
+      if (!indices.empty()) {
+        current = std::make_unique<ast::ArrayAccessNode>(std::move(current),
+                                                         std::move(indices));
+      }
+      continue;
+    }
+
+    for (const auto& part : child->children()) {
+      if (auto tok = tokenOf(*part)) {
+        if (tok->type == TokenType::IDENT) {
+          current =
+              std::make_unique<ast::RecordAccessNode>(std::move(current), *tok);
         }
       }
     }
   }
+
   return current;
-}
-
-}  // namespace
-
-Ptr<ast::ExprNode> SDTBuilder::buildVariableAccess(
-    const parser::ParseNode& node) {
-  return buildVariableAccessLocal(node, *this);
 }
 
 Ptr<ast::StmtNode> SDTBuilder::buildStatement(const parser::ParseNode& node) {
@@ -400,8 +193,8 @@ Ptr<ast::AssignNode> SDTBuilder::buildAssign(const parser::ParseNode& node) {
   if (var == nullptr || expr == nullptr) {
     return nullptr;
   }
-  auto target = buildVariableAccessLocal(*var, *this);
-  auto value = buildExpressionLocal(*this, *expr);
+  auto target = buildVariableAccess(*var);
+  auto value = buildExpression(*expr);
   if (target == nullptr || value == nullptr) {
     return nullptr;
   }
@@ -413,7 +206,7 @@ Ptr<ast::IfNode> SDTBuilder::buildIf(const parser::ParseNode& node) {
   if (cond == nullptr) {
     return nullptr;
   }
-  auto condition = buildExpressionLocal(*this, *cond);
+  auto condition = buildExpression(*cond);
   if (condition == nullptr) {
     return nullptr;
   }
@@ -475,7 +268,8 @@ Ptr<ast::StmtNode> SDTBuilder::buildCase(const parser::ParseNode& node) {
     const lexer::Token or_tok = lexer::Token(TokenType::ORSY, "or");
 
     for (auto& label : labels) {
-      auto lhs = buildExpressionLocal(*this, *selector);
+      auto lhs = buildExpression(*selector);
+
       if (lhs == nullptr || label == nullptr) {
         continue;
       }
@@ -507,7 +301,7 @@ Ptr<ast::WhileNode> SDTBuilder::buildWhile(const parser::ParseNode& node) {
   if (cond == nullptr || body == nullptr) {
     return nullptr;
   }
-  auto condition = buildExpressionLocal(*this, *cond);
+  auto condition = buildExpression(*cond);
   auto compound = buildCompoundStmt(*body);
   if (condition == nullptr || compound == nullptr) {
     return nullptr;
@@ -532,7 +326,8 @@ Ptr<ast::RepeatNode> SDTBuilder::buildRepeat(const parser::ParseNode& node) {
   if (cond == nullptr) {
     return nullptr;
   }
-  auto condition = buildExpressionLocal(*this, *cond);
+  auto condition = buildExpression(*cond);
+
   if (condition == nullptr) {
     return nullptr;
   }
@@ -560,8 +355,8 @@ Ptr<ast::ForNode> SDTBuilder::buildFor(const parser::ParseNode& node) {
   }
 
   if (expressions.size() >= 2) {
-    initial = buildExpressionLocal(*this, *expressions[0]);
-    final_expr = buildExpressionLocal(*this, *expressions[1]);
+    initial = buildExpression(*expressions[0]);
+    final_expr = buildExpression(*expressions[1]);
   }
 
   const auto* body = findChild(node, parser::NodeType::CompoundStatement);
@@ -593,7 +388,7 @@ Ptr<ast::ProcCallNode> SDTBuilder::buildProcCall(
     } else if (child->type() == parser::NodeType::ParameterList) {
       for (const auto& expr_child : child->children()) {
         if (expr_child->type() == parser::NodeType::Expression) {
-          if (auto arg = buildExpressionLocal(*this, *expr_child)) {
+          if (auto arg = buildExpression(*expr_child)) {
             args.push_back(std::move(arg));
           }
         }

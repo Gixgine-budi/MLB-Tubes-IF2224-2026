@@ -98,6 +98,54 @@ class SDTBuilder {
    */
   Ptr<ast::BlockNode> buildBlock(const parser::ParseNode &node);
 
+  // --------------------------- sdt_type_spec.cpp ---------------------------
+
+  /**
+   * @brief Build type specification AST node.
+   *
+   * Dispatches by parse node kind and lowers aliases, subranges, arrays,
+   * enumerations, and record types.
+   *
+   * Implemented in sdt_type_spec.cpp.
+   *
+   * @param node Parse node for a type specification form.
+   * @return Type specification AST node, or nullptr if unsupported/invalid.
+   */
+  Ptr<ast::TypeSpecNode> buildTypeSpec(const parser::ParseNode &node);
+
+  /**
+   * @brief Build simple type specification from an identifier token node.
+   *
+   * @param node Parse node for a range type specification.
+   * @return Type specification AST node, or nullptr if unsupported/invalid.
+   */
+  Ptr<ast::TypeSpecNode> buildRangeTypeSpec(const parser::ParseNode &node);
+
+  /**
+   * @brief Build array type specification from an array type parse node.
+   *
+   * @param node Parse node for an array type specification.
+   * @return Type specification AST node, or nullptr if unsupported/invalid.
+   */
+  Ptr<ast::TypeSpecNode> buildArrayTypeSpec(const parser::ParseNode &node);
+
+  /**
+   * @brief Build enumerated type specification from an enumerated type parse
+   * node.
+   *
+   * @param node Parse node for an enumerated type.
+   * @return Type specification AST node, or nullptr if unsupported/invalid.
+   */
+  Ptr<ast::TypeSpecNode> buildEnumeratedTypeSpec(const parser::ParseNode &node);
+
+  /**
+   * @brief Build record type specification from a record type parse node.
+   *
+   * @param node Parse node for a record type specification.
+   * @return Type specification AST node, or nullptr if unsupported/invalid.
+   */
+  Ptr<ast::TypeSpecNode> buildRecordTypeSpec(const parser::ParseNode &node);
+
   // -------------------------- sdt_declaration.cpp --------------------------
 
   /**
@@ -108,7 +156,17 @@ class SDTBuilder {
    */
   std::vector<Ptr<ast::AstNode>> buildDeclarations(
       const parser::ParseNode &node);
-  Ptr<ast::TypeSpecNode> buildTypeSpec(const parser::ParseNode &node);
+
+  /**
+   * @brief Build constant expression node for declaration contexts.
+   *
+   * Supports signed numeric constants, literal constants, and identifier
+   * constants used by const declarations and subrange bounds.
+   *
+   * @param node Parse node of type NodeType::Constant.
+   * @return Expression node for constant context, or nullptr if invalid.
+   */
+  Ptr<ast::ExprNode> buildConstantExpr(const parser::ParseNode &node);
 
   /**
    * @brief Build one variable declaration AST node.
@@ -192,6 +250,17 @@ class SDTBuilder {
    * @return Lowered statement AST node.
    */
   Ptr<ast::StmtNode> buildCase(const parser::ParseNode &node);
+
+  /**
+   * @brief Build case-label constant expression node.
+   *
+   * Supports signed numeric labels, string/char labels, and identifier labels
+   * used by case-of branches.
+   *
+   * @param node Parse node of type NodeType::Constant.
+   * @return Expression node for a single case label, or nullptr if invalid.
+   */
+  Ptr<ast::ExprNode> buildCaseConstantExpr(const parser::ParseNode &node);
 
   /**
    * @brief Build while/do statement AST node.
