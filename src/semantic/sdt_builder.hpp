@@ -1,61 +1,143 @@
 #pragma once
 
+#include <cstddef>
+#include <iosfwd>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 #include <vector>
 
-#include "ast/ast_node.hpp"
-#include "ast/decl_nodes.hpp"
-#include "ast/expr_nodes.hpp"
-#include "ast/stmt_nodes.hpp"
+#include "lexer/token.hpp"
 #include "parser/parse_node.hpp"
 
 namespace semantic {
 
-template <typename T>
-using Ptr = std::unique_ptr<T>;
+enum class AstKind {
+  Program,
+  ProgramHeader,
+  Declarations,
+  ConstDecl,
+  TypeDecl,
+  VarDecl,
+  NamedType,
+  ArrayType,
+  RangeType,
+  EnumType,
+  RecordType,
+  FieldDecl,
+  Block,
+  CompoundStatement,
+  StatementList,
+  Statement,
+  Assign,
+  If,
+  Case,
+  CaseBranch,
+  While,
+  Repeat,
+  For,
+  Call,
+  ParameterList,
+  VarRef,
+  ArrayAccess,
+  FieldAccess,
+  Literal,
+  UnaryOp,
+  BinOp,
+  Empty,
+  Error,
+};
 
-class SDTBuilder {
+struct AstAnnotation {
+  std::string type;
+  int tab_index = -1;
+  int block_index = -1;
+  int array_index = -1;
+  int lexical_level = -1;
+};
+
+class AstNode;
+using AstPtr = std::unique_ptr<AstNode>;
+
+class AstNode {
  public:
-  SDTBuilder() = default;
-  ~SDTBuilder() = default;
+  explicit AstNode(AstKind kind);
+  AstNode(AstKind kind, std::string value);
+  AstNode(AstKind kind, const lexer::Token& token);
 
-  // Main entry point for Syntax-Directed Translation
-  Ptr<ast::AstNode> build(const parser::ParseNode &parse_node);
+  AstKind kind() const { return kind_; }
+  const std::string& name() const { return name_; }
+  const std::string& value() const { return value_; }
+  const std::string& op() const { return op_; }
+  const std::optional<lexer::Token>& token() const { return token_; }
+  const std::vector<AstPtr>& children() const { return children_; }
+  const AstAnnotation& annotation() const { return annotation_; }
+
+  void setName(std::string name) { name_ = std::move(name); }
+  void setValue(std::string value) { value_ = std::move(value); }
+  void setOp(std::string op) { op_ = std::move(op); }
+  AstAnnotation& annotation() { return annotation_; }
+
+  AstNode& addChild(AstPtr child);
+  void print(std::ostream& os, int indent = 0) const;
 
  private:
-  // Helper translation methods for converting ParseNode to discrete AstNode
-  // types
-  Ptr<ast::ProgramNode> buildProgram(const parser::ParseNode &node);
-  Ptr<ast::BlockNode> buildBlock(const parser::ParseNode &node);
+  AstKind kind_;
+  std::string name_;
+  std::string value_;
+  std::string op_;
+  std::optional<lexer::Token> token_;
+  std::vector<AstPtr> children_;
+  AstAnnotation annotation_;
+};
 
-  // Declarations
-  std::vector<Ptr<ast::AstNode>> buildDeclarations(
-      const parser::ParseNode &node);
-  Ptr<ast::VarDeclNode> buildVarDecl(const parser::ParseNode &node);
-  Ptr<ast::TypeDeclNode> buildTypeDecl(const parser::ParseNode &node);
-  Ptr<ast::ProcDeclNode> buildProcDecl(const parser::ParseNode &node);
-  Ptr<ast::FuncDeclNode> buildFuncDecl(const parser::ParseNode &node);
-  std::vector<Ptr<ast::ParameterNode>> buildFormalParameters(
-      const parser::ParseNode &node);
+std::ostream& operator<<(std::ostream& os, AstKind kind);
+std::ostream& operator<<(std::ostream& os, const AstNode& node);
 
-  // Statements
-  Ptr<ast::StmtNode> buildStatement(const parser::ParseNode &node);
-  Ptr<ast::CompoundStmtNode> buildCompoundStmt(const parser::ParseNode &node);
-  Ptr<ast::AssignNode> buildAssign(const parser::ParseNode &node);
-  Ptr<ast::IfNode> buildIf(const parser::ParseNode &node);
-  Ptr<ast::WhileNode> buildWhile(const parser::ParseNode &node);
-  Ptr<ast::RepeatNode> buildRepeat(const parser::ParseNode &node);
-  Ptr<ast::ForNode> buildFor(const parser::ParseNode &node);
-  Ptr<ast::ProcCallNode> buildProcCall(const parser::ParseNode &node);
+class SdtBuilder {
+ public:
+  AstPtr build(const parser::ParseNode& node) const;
 
-  // Expressions
-  Ptr<ast::ExprNode> buildExpression(const parser::ParseNode &node);
-  Ptr<ast::ExprNode> buildSimpleExpression(const parser::ParseNode &node);
-  Ptr<ast::ExprNode> buildTerm(const parser::ParseNode &node);
-  Ptr<ast::ExprNode> buildFactor(const parser::ParseNode &node);
+  AstPtr buildProgram(const parser::ParseNode& node) const;
+  AstPtr buildProgramHeader(const parser::ParseNode& node) const;
+  AstPtr buildDeclarationPart(const parser::ParseNode& node) const;
+  AstPtr buildConstDeclaration(const parser::ParseNode& node) const;
+  AstPtr buildTypeDeclaration(const parser::ParseNode& node) const;
+  AstPtr buildVarDeclaration(const parser::ParseNode& node) const;
+  AstPtr buildType(const parser::ParseNode& node) const;
+  AstPtr buildArrayType(const parser::ParseNode& node) const;
+  AstPtr buildRange(const parser::ParseNode& node) const;
+  AstPtr buildEnumerated(const parser::ParseNode& node) const;
+  AstPtr buildRecordType(const parser::ParseNode& node) const;
+  AstPtr buildFieldList(const parser::ParseNode& node) const;
+  AstPtr buildFieldPart(const parser::ParseNode& node) const;
+  AstPtr buildConstant(const parser::ParseNode& node) const;
 
-  // Variables & accessing (arrays, records)
-  Ptr<ast::ExprNode> buildVariableAccess(const parser::ParseNode &node);
+  AstPtr buildExpression(const parser::ParseNode& node) const;
+  AstPtr buildSimpleExpression(const parser::ParseNode& node) const;
+  AstPtr buildTerm(const parser::ParseNode& node) const;
+  AstPtr buildFactor(const parser::ParseNode& node) const;
+  AstPtr buildVariable(const parser::ParseNode& node) const;
+  AstPtr buildComponentVariable(AstPtr base, const parser::ParseNode& node) const;
+  AstPtr buildIndexElement(const parser::ParseNode& node) const;
+  AstPtr buildFunctionCall(const parser::ParseNode& node) const;
+  AstPtr buildParameterList(const parser::ParseNode& node) const;
+
+ private:
+  static bool isToken(const parser::ParseNode& node);
+  static bool isToken(const parser::ParseNode& node, lexer::TokenType type);
+  static const lexer::Token* tokenOf(const parser::ParseNode& node);
+  static const parser::ParseNode* childAt(const parser::ParseNode& node,
+                                          std::size_t index);
+  static const parser::ParseNode* firstChildOf(
+      const parser::ParseNode& node, parser::NodeType type);
+  static std::vector<std::string> identifierList(
+      const parser::ParseNode& node);
+  static std::string tokenOperator(const lexer::Token& token);
+  static std::string literalType(const lexer::Token& token);
+  static AstPtr makeError();
+  static AstPtr makeEmpty();
 };
 
 }  // namespace semantic
