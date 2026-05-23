@@ -1,12 +1,48 @@
+#include "ast/expr_nodes.hpp"
 #include "ast/type_nodes.hpp"
 #include "semantic/semantic_analyzer.hpp"
 #include "semantic/symtable_entries.hpp"
 
 namespace semantic {
 
+int SemanticAnalyzer::makeAnonymousType(int raw_type, int ref) {
+  const std::string name =
+      "$anonym_type" + std::to_string(anon_type_counter_++);
+  return sym_table.enterTab(name, ObjClass::Type, raw_type, ref);
+}
+
+int SemanticAnalyzer::constIntValue(const ast::AstNode* node,
+                                    int fallback) const {
+  if (node == nullptr) return fallback;
+
+  if (const auto* num = dynamic_cast<const ast::NumberNode*>(node)) {
+    try {
+      return std::stoi(num->val.lexeme);
+    } catch (...) {
+      return fallback;
+    }
+  }
+
+  if (const auto* id = dynamic_cast<const ast::IdentNode*>(node)) {
+    if (auto entry = sym_table.lookup(id->id.lexeme)) {
+      return entry->adr;
+    }
+  }
+
+  return fallback;
+}
+
 int SemanticAnalyzer::resolveSimpleTypeName(const std::string& name) {
   if (auto entry = sym_table.lookup(name)) {
-    if (entry->obj == ObjClass::Type) return entry->idx;
+    if (entry->obj == ObjClass::Type) {
+      if (entry->ref > 0) {
+        return entry->idx;
+      }
+      if (entry->type >= RESERVED) {
+        return entry->type;
+      }
+      return entry->idx;
+    }
   }
   reportError("unknown type '" + name + "'");
   return 0;
@@ -22,26 +58,89 @@ void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
 }
 
 void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
-  node.expression_type = get_base_type("integer");
+  const int int_t = get_base_type("integer");
   if (node.low != nullptr) node.low->accept(*this);
   if (node.high != nullptr) node.high->accept(*this);
+
+  if (node.low != nullptr && node.low->expression_type != int_t) {
+    reportError("subrange lower bound must be integer");
+  }
+  if (node.high != nullptr && node.high->expression_type != int_t) {
+    reportError("subrange upper bound must be integer");
+  }
+
+  node.expression_type =
+      makeAnonymousType(static_cast<int>(BuiltinType::Subrange));
 }
 
 void SemanticAnalyzer::visit(ast::ArrayTypeSpecNode& node) {
-  node.expression_type = get_base_type("integer");
-  if (node.index_type != nullptr) resolveTypeSpec(*node.index_type);
-  if (node.element_type != nullptr) resolveTypeSpec(*node.element_type);
+  const int index_type =
+      (node.index_type != nullptr) ? resolveTypeSpec(*node.index_type) : 0;
+  const int element_type =
+      (node.element_type != nullptr) ? resolveTypeSpec(*node.element_type) : 0;
+
+  int element_ref = 0;
+  if (element_type >= RESERVED) {
+    element_ref = sym_table.getTabEntry(element_type).ref;
+  }
+
+  AtabEntry atab{};
+  atab.xtyp = index_type;
+  atab.etyp = element_type;
+  atab.eref = element_ref;
+  atab.low = 0;
+  atab.high = 0;
+  atab.elsz = 1;
+  atab.size = 1;
+
+  if (const auto* subrange = dynamic_cast<const ast::SubrangeTypeSpecNode*>(
+          node.index_type.get())) {
+    atab.low = constIntValue(subrange->low.get(), 0);
+    atab.high = constIntValue(subrange->high.get(), 0);
+    atab.size = atab.high >= atab.low ? (atab.high - atab.low + 1) : 1;
+  }
+
+  const int atab_idx = sym_table.enterTab(atab);
+  node.expression_type =
+      makeAnonymousType(static_cast<int>(BuiltinType::Array), atab_idx);
 }
 
 void SemanticAnalyzer::visit(ast::RecordTypeSpecNode& node) {
-  node.expression_type = 0;
+  const int record_block = sym_table.pushBlock();
+
   for (auto& field : node.fields) {
-    if (field.second != nullptr) resolveTypeSpec(*field.second);
+    const int field_type =
+        (field.second != nullptr) ? resolveTypeSpec(*field.second) : 0;
+
+    for (const auto& id : field.first) {
+      if (sym_table.lookupCurrentScope(id.lexeme)) {
+        reportError("record field '" + id.lexeme + "' already declared");
+        continue;
+      }
+      sym_table.enterTab(id.lexeme, ObjClass::Variable, field_type);
+    }
   }
+
+  sym_table.popBlock();
+  node.expression_type =
+      makeAnonymousType(static_cast<int>(BuiltinType::Record), record_block);
 }
 
 void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
-  node.expression_type = 0;
+  node.expression_type =
+      makeAnonymousType(static_cast<int>(BuiltinType::Enumerated));
+
+  int enum_value = 0;
+  for (const auto& lit : node.literals) {
+    if (sym_table.lookupCurrentScope(lit.lexeme)) {
+      reportError("identifier '" + lit.lexeme + "' already declared");
+      continue;
+    }
+    const int idx = sym_table.enterTab(lit.lexeme, ObjClass::Constant,
+                                       node.expression_type, 0, 1, 1);
+    auto& entry = sym_table.getTabEntry(idx);
+    entry.adr = enum_value++;
+  }
 }
 
 void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
@@ -138,8 +237,13 @@ void SemanticAnalyzer::visit(ast::TypeDeclNode& node) {
     return;
   }
 
-  node.tab_index =
-      sym_table.enterTab(node.identifier.lexeme, ObjClass::Type, type_code);
+  int ref = 0;
+  if (type_code >= RESERVED) {
+    ref = sym_table.getTabEntry(type_code).ref;
+  }
+
+  node.tab_index = sym_table.enterTab(node.identifier.lexeme, ObjClass::Type,
+                                      type_code, ref);
   node.expression_type = type_code;
 }
 

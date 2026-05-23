@@ -91,6 +91,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   SymbolTable sym_table;
   diag::Diagnoser &diagnoser_;
   bool has_errors_ = false;
+  int anon_type_counter_ = 0;
 
   /**
    * @brief Report error to diagnoser with source location from the given parse
@@ -150,6 +151,17 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @return bool True if the assignment is compatible, false otherwise.
    */
   bool isAssignmentCompatible(int target_type, int expr_type);
+
+  /**
+   * @brief Create an internal anonymous type entry for composite/derived type
+   * specs.
+   */
+  int makeAnonymousType(int raw_type, int ref = 0);
+
+  /**
+   * @brief Best-effort extraction of integer value from a constant AST node.
+   */
+  int constIntValue(const ast::AstNode *node, int fallback = 0) const;
 };
 
 }  // namespace semantic

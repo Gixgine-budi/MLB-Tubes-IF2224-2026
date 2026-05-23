@@ -22,6 +22,7 @@ SymbolTable::SymbolTable() {
                     "or",         "div",     "mod"};
 
   btab.push_back(BtabEntry{0, 0, 0, 0, 0});
+  atab.push_back(AtabEntry{0, 0, 0, 0, 0, 0, 0, 0});
   block_stack.push_back(0);
   current_level = 0;
   last_idx = 0;
@@ -33,7 +34,7 @@ SymbolTable::SymbolTable() {
     entry.id = name;
     entry.link = last_idx;
     entry.obj = ObjClass::Type;
-    entry.type = code;
+    entry.type = entry.idx;
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
@@ -56,7 +57,7 @@ SymbolTable::SymbolTable() {
     entry.id = name;
     entry.link = last_idx;
     entry.obj = ObjClass::Constant;
-    entry.type = static_cast<int>(type_code);
+    entry.type = RESERVED + static_cast<int>(type_code) - 1;
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
@@ -316,7 +317,8 @@ void SymbolTable::printAtab(std::ostream& out) const {
   out << std::string(elsz_width + 2, '-') << '|';
   out << std::string(size_width + 2, '-') << "|\n";
 
-  for (const auto& entry : atab) {
+  for (std::size_t i = 1; i < atab.size(); ++i) {
+    const auto& entry = atab[i];
     out << "| " << std::setw(idx_width) << std::right << entry.idx << " | "
         << std::setw(xtyp_width) << std::right << entry.xtyp << " | "
         << std::setw(etyp_width) << std::right << entry.etyp << " | "
