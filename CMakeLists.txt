@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(arion VERSION 0.2.3 LANGUAGES CXX)
+project(arion VERSION 0.3.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)

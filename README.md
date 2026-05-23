@@ -27,6 +27,17 @@ Parser adalah komponen kedua yang mengambil aliran token dari lexer dan membangu
 - Menghasilkan parse tree yang merepresentasikan hierarki sintaks program
 - Menangani operator precedence dan associativity dengan benar
 
+### Semantic
+
+Semantic adalah komponen ketiga yang melakukan analisis semantik pada parse tree untuk memastikan bahwa program tidak hanya benar secara sintaksis tetapi juga secara semantik.
+
+**Metode Implementasi:**
+- Melakukan Syntax Directed Translation (SDT) untuk menghitung atribut pada parse tree
+- Membangun decorated Abstract Syntax Tree (AST) untuk representasi yang lebih abstrak dari program
+- Menggunakan Visitor Pattern untuk traversal AST
+- Membangun Symbol Table untuk menyimpan informasi tentang variabel, fungsi, dan tipe data
+- Melakukan type checking untuk memastikan konsistensi tipe data dalam operasi dan assignment
+
 ### Error Handling (Diagnoser)
 
 Diagnoser adalah komponen yang mendeteksi, mengklasifikasi, dan melaporkan berbagai kesalahan yang terjadi selama proses lexical analysis, parsing, dan semantic analysis.
@@ -58,18 +69,15 @@ cmake --build build
 
 * Langsung menjalankan executable. Hasil parsing ada di `path/to/source.txt.ptree`.
 ```sh
-./arion path/to/source.txt
+./arion path/to/source.txt --optional-flags
 ```
 
-* Hanya menjalankan lexer untuk melihat token yang dihasilkan. Hasil token ada di `path/to/source.txt.tokens`.
-```sh
-./arion --lexer path/to/source.txt
-```
-
-* Menampilkan hasil ke terminal tanpa menyimpan ke file.
-```sh
-./arion --dump path/to/source.txt
-```
+* Daftar flag:
+  - `--lexer`: Hanya menjalankan lexer dan menyimpan token yang dihasilkan ke file `.token`
+  - `--parser`: Menjalankan lexer dan parser, menyimpan parse tree yang dihasilkan ke file `.ptree`
+  - `--semantic`: Menjalankan lexer, parser, dan semantic analyzer, menyimpan decorated AST ke file `.ast` dan symbol table ke file `.sym`
+  - `--dump`: Digunakan bersamaan dengan flag lain untuk mencetak hasil terakhir ke terminal
+  - `--dump-all`: Mencetak hasil dari semua tahap (lexer, parser, semantic) ke terminal
 
 ## Kontributor
 
@@ -93,6 +101,16 @@ cmake --build build
 | 13524011 | Muhammad Iqbal Raihan      | Parser Function, Parser Statement |
 | 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan, Parser Header |
 | 13524099 | Muhammad Akmal             | Implementasi Parser, Diagnoser, Integrasi ke Main |
+
+
+### Milestone 3: Semantic
+
+|   NIM    |           Nama             |      Peran       |
+| -------- | -------------------------- | ---------------- |
+| 13524009 | Mikhael Benrael Tampubolon | Penulisan Laporan, Semantic Analyzer |
+| 13524011 | Muhammad Iqbal Raihan      | Semantic Analyzer dan SDT Builder |
+| 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan, SDT Builder |
+| 13524099 | Muhammad Akmal             | Implementasi AST Node dan Visitor Pattern, Printer, Symbol Table, Integrasi ke Main |
 
 *IF2224 Teori Bahasa Formal dan Automata*
 *Semester II Tahun Ajaran 2025/2026*

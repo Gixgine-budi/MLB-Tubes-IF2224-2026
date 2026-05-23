@@ -30,3 +30,11 @@ core.*
 # IDEs
 .vscode/
 .idea/
+
+# Compiler artifacts
+*.token
+*.ptree
+*.ast
+*.sym.tab
+*.sym.atab
+*.sym.btab
