@@ -15,7 +15,10 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildTypeSpec(
 
   switch (node.type()) {
     case NodeType::Type:
-      if (node.children().empty()) return nullptr;
+      if (node.children().empty()) {
+        reportBuildError(node, "type wrapper node has no child");
+        return nullptr;
+      }
       return buildTypeSpec(*node.children()[0]);
 
     case NodeType::TokenNode:
@@ -23,6 +26,7 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildTypeSpec(
           node.token()->type == lexer::TokenType::IDENT) {
         return std::make_unique<ast::SimpleTypeSpecNode>(node.token().value());
       }
+      reportBuildError(node, "type token node is not an identifier");
       return nullptr;
 
     case NodeType::Range:
@@ -38,16 +42,24 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildTypeSpec(
       return buildRecordTypeSpec(node);
 
     default:
+      reportBuildError(node, "unsupported type specification node");
       return nullptr;
   }
 }
 
 Ptr<ast::TypeSpecNode> SDTBuilder::buildRangeTypeSpec(
     const parser::ParseNode &node) {
-  if (node.children().size() < 4) return nullptr;
+  if (node.children().size() < 4) {
+    reportBuildError(node, "range type has incomplete bounds");
+    return nullptr;
+  }
 
   std::unique_ptr<ast::AstNode> low = buildConstantExpr(*node.children()[0]);
   std::unique_ptr<ast::AstNode> high = buildConstantExpr(*node.children()[3]);
+  if (low == nullptr || high == nullptr) {
+    reportBuildError(node, "failed to build range bound constants");
+    return nullptr;
+  }
   return std::make_unique<ast::SubrangeTypeSpecNode>(std::move(low),
                                                      std::move(high));
 }
@@ -56,7 +68,10 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildArrayTypeSpec(
     const parser::ParseNode &node) {
   using parser::NodeType;
 
-  if (node.children().size() < 6) return nullptr;
+  if (node.children().size() < 6) {
+    reportBuildError(node, "array type node has incomplete structure");
+    return nullptr;
+  }
 
   Ptr<ast::TypeSpecNode> index_type;
   const auto &index_node = *node.children()[2];
@@ -69,6 +84,10 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildArrayTypeSpec(
   }
 
   auto element_type = buildTypeSpec(*node.children()[5]);
+  if (index_type == nullptr || element_type == nullptr) {
+    reportBuildError(node, "failed to build array index or element type");
+    return nullptr;
+  }
   return std::make_unique<ast::ArrayTypeSpecNode>(std::move(index_type),
                                                   std::move(element_type));
 }
@@ -84,6 +103,9 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildEnumeratedTypeSpec(
         child->token()->type == lexer::TokenType::IDENT) {
       literals.push_back(child->token().value());
     }
+  }
+  if (literals.empty()) {
+    reportBuildError(node, "enumerated type has no identifier literals");
   }
   return std::make_unique<ast::EnumTypeSpecNode>(std::move(literals));
 }
@@ -120,6 +142,10 @@ Ptr<ast::TypeSpecNode> SDTBuilder::buildRecordTypeSpec(
 
       fields.emplace_back(std::move(ids), std::move(field_type));
     }
+  }
+
+  if (fields.empty()) {
+    reportBuildError(node, "record type has no field declarations");
   }
 
   return std::make_unique<ast::RecordTypeSpecNode>(std::move(fields));

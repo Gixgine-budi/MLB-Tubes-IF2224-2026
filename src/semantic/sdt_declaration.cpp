@@ -13,12 +13,14 @@ namespace semantic {
 Ptr<ast::ExprNode> SDTBuilder::buildConstantExpr(
     const parser::ParseNode &node) {
   if (node.type() != parser::NodeType::Constant || node.children().empty()) {
+    reportBuildError(node, "invalid constant node in declaration context");
     return nullptr;
   }
 
   const auto &children = node.children();
   const auto &first = children[0];
   if (first->type() != parser::NodeType::TokenNode || !first->token()) {
+    reportBuildError(node, "constant node does not start with a token child");
     return nullptr;
   }
 
@@ -55,7 +57,10 @@ Ptr<ast::ExprNode> SDTBuilder::buildConstantExpr(
 std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
     const parser::ParseNode &node) {
   std::vector<Ptr<ast::AstNode>> decls;
-  if (node.type() != parser::NodeType::DeclarationPart) return decls;
+  if (node.type() != parser::NodeType::DeclarationPart) {
+    reportBuildError(node, "expected DeclarationPart parse node");
+    return decls;
+  }
 
   for (const auto &child : node.children()) {
     if (child->type() == parser::NodeType::ConstDeclaration) {
@@ -108,18 +113,12 @@ std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
   return decls;
 }
 
-Ptr<ast::VarDeclNode> SDTBuilder::buildVarDecl(const parser::ParseNode &node) {
-  return nullptr;  // Handled directly in buildDeclarations loop
-}
-
-Ptr<ast::TypeDeclNode> SDTBuilder::buildTypeDecl(
-    const parser::ParseNode &node) {
-  return nullptr;  // Handled directly in buildDeclarations loop
-}
-
 Ptr<ast::ProcDeclNode> SDTBuilder::buildProcDecl(
     const parser::ParseNode &node) {
-  if (node.children().empty()) return nullptr;
+  if (node.children().empty()) {
+    reportBuildError(node, "procedure declaration node has no children");
+    return nullptr;
+  }
 
   lexer::Token id_tok;
   std::vector<Ptr<ast::ParameterNode>> params;
@@ -145,13 +144,26 @@ Ptr<ast::ProcDeclNode> SDTBuilder::buildProcDecl(
     block = buildBlock(*node.children()[idx]);
   }
 
+  if (id_tok.lexeme.empty()) {
+    reportBuildError(node, "procedure declaration is missing identifier");
+    return nullptr;
+  }
+
+  if (block == nullptr) {
+    reportBuildError(node, "procedure declaration is missing block body");
+    return nullptr;
+  }
+
   return std::make_unique<ast::ProcDeclNode>(id_tok, std::move(params),
                                              std::move(block));
 }
 
 Ptr<ast::FuncDeclNode> SDTBuilder::buildFuncDecl(
     const parser::ParseNode &node) {
-  if (node.children().empty()) return nullptr;
+  if (node.children().empty()) {
+    reportBuildError(node, "function declaration node has no children");
+    return nullptr;
+  }
 
   lexer::Token id_tok;
   std::vector<Ptr<ast::ParameterNode>> params;
@@ -189,6 +201,21 @@ Ptr<ast::FuncDeclNode> SDTBuilder::buildFuncDecl(
   if (idx < node.children().size() &&
       node.children()[idx]->type() == parser::NodeType::Block) {
     block = buildBlock(*node.children()[idx]);
+  }
+
+  if (id_tok.lexeme.empty()) {
+    reportBuildError(node, "function declaration is missing identifier");
+    return nullptr;
+  }
+
+  if (ret_type == nullptr) {
+    reportBuildError(node, "function declaration is missing return type");
+    return nullptr;
+  }
+
+  if (block == nullptr) {
+    reportBuildError(node, "function declaration is missing block body");
+    return nullptr;
   }
 
   return std::make_unique<ast::FuncDeclNode>(

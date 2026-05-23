@@ -42,12 +42,14 @@ const parser::ParseNode* findChild(const parser::ParseNode& parent,
 Ptr<ast::ExprNode> SDTBuilder::buildCaseConstantExpr(
     const parser::ParseNode& node) {
   if (node.type() != parser::NodeType::Constant || node.children().empty()) {
+    reportBuildError(node, "invalid case label constant node");
     return nullptr;
   }
 
   const auto& children = node.children();
   const auto& first = children[0];
   if (first->type() != parser::NodeType::TokenNode || !first->token()) {
+    reportBuildError(node, "case label constant does not start with token");
     return nullptr;
   }
 
@@ -136,11 +138,15 @@ Ptr<ast::ExprNode> SDTBuilder::buildVariableAccess(
     }
   }
 
+  if (current == nullptr) {
+    reportBuildError(node, "failed to build variable access expression");
+  }
   return current;
 }
 
 Ptr<ast::StmtNode> SDTBuilder::buildStatement(const parser::ParseNode& node) {
   if (node.type() != parser::NodeType::Statement) {
+    reportBuildError(node, "expected Statement parse node");
     return nullptr;
   }
 
@@ -166,6 +172,7 @@ Ptr<ast::StmtNode> SDTBuilder::buildStatement(const parser::ParseNode& node) {
         break;
     }
   }
+  reportBuildError(node, "statement node does not contain a supported form");
   return nullptr;
 }
 
@@ -191,11 +198,15 @@ Ptr<ast::AssignNode> SDTBuilder::buildAssign(const parser::ParseNode& node) {
   const auto* var = findChild(node, parser::NodeType::Variable);
   const auto* expr = findChild(node, parser::NodeType::Expression);
   if (var == nullptr || expr == nullptr) {
+    reportBuildError(node,
+                     "assignment statement is missing target or expression");
     return nullptr;
   }
   auto target = buildVariableAccess(*var);
   auto value = buildExpression(*expr);
   if (target == nullptr || value == nullptr) {
+    reportBuildError(node,
+                     "failed to build assignment target or value expression");
     return nullptr;
   }
   return std::make_unique<ast::AssignNode>(std::move(target), std::move(value));
@@ -204,10 +215,12 @@ Ptr<ast::AssignNode> SDTBuilder::buildAssign(const parser::ParseNode& node) {
 Ptr<ast::IfNode> SDTBuilder::buildIf(const parser::ParseNode& node) {
   const auto* cond = findChild(node, parser::NodeType::Expression);
   if (cond == nullptr) {
+    reportBuildError(node, "if statement is missing condition expression");
     return nullptr;
   }
   auto condition = buildExpression(*cond);
   if (condition == nullptr) {
+    reportBuildError(node, "failed to build if-condition expression");
     return nullptr;
   }
 
@@ -226,6 +239,7 @@ Ptr<ast::IfNode> SDTBuilder::buildIf(const parser::ParseNode& node) {
   }
 
   if (then_branch == nullptr) {
+    reportBuildError(node, "if statement is missing then-branch statement");
     return nullptr;
   }
   return std::make_unique<ast::IfNode>(
@@ -236,6 +250,8 @@ Ptr<ast::StmtNode> SDTBuilder::buildCase(const parser::ParseNode& node) {
   const auto* selector = findChild(node, parser::NodeType::Expression);
   const auto* first_case = findChild(node, parser::NodeType::CaseBlock);
   if (selector == nullptr || first_case == nullptr) {
+    reportBuildError(node,
+                     "case statement is missing selector or first case block");
     return nullptr;
   }
 
@@ -260,6 +276,10 @@ Ptr<ast::StmtNode> SDTBuilder::buildCase(const parser::ParseNode& node) {
     }
 
     if (then_stmt == nullptr) {
+      if (else_stmt == nullptr) {
+        reportBuildError(case_block,
+                         "case block has no statement branch to execute");
+      }
       return else_stmt;
     }
 
@@ -299,11 +319,15 @@ Ptr<ast::WhileNode> SDTBuilder::buildWhile(const parser::ParseNode& node) {
   const auto* cond = findChild(node, parser::NodeType::Expression);
   const auto* body = findChild(node, parser::NodeType::CompoundStatement);
   if (cond == nullptr || body == nullptr) {
+    reportBuildError(node,
+                     "while statement is missing condition or body block");
     return nullptr;
   }
   auto condition = buildExpression(*cond);
   auto compound = buildCompoundStmt(*body);
   if (condition == nullptr || compound == nullptr) {
+    reportBuildError(node,
+                     "failed to build while-condition or while-body block");
     return nullptr;
   }
   return std::make_unique<ast::WhileNode>(std::move(condition),
@@ -324,11 +348,13 @@ Ptr<ast::RepeatNode> SDTBuilder::buildRepeat(const parser::ParseNode& node) {
     }
   }
   if (cond == nullptr) {
+    reportBuildError(node, "repeat statement is missing until condition");
     return nullptr;
   }
   auto condition = buildExpression(*cond);
 
   if (condition == nullptr) {
+    reportBuildError(node, "failed to build repeat-until condition");
     return nullptr;
   }
   return std::make_unique<ast::RepeatNode>(std::move(statements),
@@ -362,11 +388,15 @@ Ptr<ast::ForNode> SDTBuilder::buildFor(const parser::ParseNode& node) {
   const auto* body = findChild(node, parser::NodeType::CompoundStatement);
   if (iter.lexeme.empty() || initial == nullptr || final_expr == nullptr ||
       body == nullptr) {
+    reportBuildError(node,
+                     "for statement is missing iterator, bounds, or "
+                     "compound-statement body");
     return nullptr;
   }
 
   auto compound = buildCompoundStmt(*body);
   if (compound == nullptr) {
+    reportBuildError(node, "failed to build for-loop body block");
     return nullptr;
   }
 
@@ -397,6 +427,7 @@ Ptr<ast::ProcCallNode> SDTBuilder::buildProcCall(
   }
 
   if (name.lexeme.empty()) {
+    reportBuildError(node, "procedure call is missing identifier token");
     return nullptr;
   }
   return std::make_unique<ast::ProcCallNode>(name, std::move(args));

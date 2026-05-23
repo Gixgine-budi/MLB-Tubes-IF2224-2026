@@ -169,22 +169,6 @@ class SDTBuilder {
   Ptr<ast::ExprNode> buildConstantExpr(const parser::ParseNode &node);
 
   /**
-   * @brief Build one variable declaration AST node.
-   *
-   * @param node Parse node representing one var declaration unit.
-   * @return Variable declaration AST node.
-   */
-  Ptr<ast::VarDeclNode> buildVarDecl(const parser::ParseNode &node);
-
-  /**
-   * @brief Build one type declaration AST node.
-   *
-   * @param node Parse node representing one type declaration unit.
-   * @return Type declaration AST node.
-   */
-  Ptr<ast::TypeDeclNode> buildTypeDecl(const parser::ParseNode &node);
-
-  /**
    * @brief Build procedure declaration AST node.
    *
    * @param node Parse node of type NodeType::ProcedureDeclaration.
