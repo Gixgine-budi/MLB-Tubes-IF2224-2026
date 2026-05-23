@@ -4,29 +4,58 @@
 #include "ast/decl_nodes.hpp"
 #include "ast/expr_nodes.hpp"
 #include "ast/stmt_nodes.hpp"
+#include "diagnoser/diagnoser.hpp"
+#include "parser/parse_node.hpp"
+#include "semantic/sdt_builder.hpp"
 #include "semantic/symbol_table.hpp"
 
 namespace semantic {
 
 class SemanticAnalyzer : public ast::ASTVisitor {
  public:
-  SemanticAnalyzer() = default;
+  /**
+   * @brief Construct a new Semantic Analyzer object
+   *
+   * @param parse_root Parse tree root to analyze (borrowed reference)
+   * @param diagnoser Diagnoser to report semantic errors into (borrowed
+   * reference)
+   */
+  SemanticAnalyzer(const parser::ParseNode &parse_root,
+                   diag::Diagnoser &diagnoser);
   ~SemanticAnalyzer() override = default;
 
-  // Entry point for Semantic Analysis pass
-  void analyze(ast::AstNode &root);
+  /**
+   * @brief Build the AST from the parse tree, then decorate it and populate the
+   * symbol table. Errors are reported through the bound Diagnoser.
+   *
+   */
+  void analyze();
 
-  // Provide access to the populated environment structure after analysis
+  /**
+   * @brief Get the Ast object (const ref)
+   *
+   * @return const ast::AstNode&
+   */
+  const ast::AstNode &getAst() const;
+
+  /**
+   * @brief Get the Ast object (non-const) for mutation
+   *
+   * @return ast::AstNode&
+   */
+  ast::AstNode &getAst();
+
+  /**
+   * @brief Get the Symbol Table object
+   *
+   * @return const SymbolTable&
+   */
   const SymbolTable &getSymbolTable() const { return sym_table; }
 
   // --- Visitor Overrides ---
 
-  // Program and Block structure
-
   void visit(ast::ProgramNode &node) override;
   void visit(ast::BlockNode &node) override;
-
-  // Type Specifications
 
   void visit(ast::SimpleTypeSpecNode &node) override;
   void visit(ast::SubrangeTypeSpecNode &node) override;
@@ -34,15 +63,11 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   void visit(ast::RecordTypeSpecNode &node) override;
   void visit(ast::EnumTypeSpecNode &node) override;
 
-  // Declarations
-
   void visit(ast::ConstDeclNode &node) override;
   void visit(ast::VarDeclNode &node) override;
   void visit(ast::TypeDeclNode &node) override;
   void visit(ast::ProcDeclNode &node) override;
   void visit(ast::FuncDeclNode &node) override;
-
-  // Expressions
 
   void visit(ast::BinOpNode &node) override;
   void visit(ast::UnaryOpNode &node) override;
@@ -53,8 +78,6 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   void visit(ast::ArrayAccessNode &node) override;
   void visit(ast::RecordAccessNode &node) override;
 
-  // Statements
-
   void visit(ast::AssignNode &node) override;
   void visit(ast::IfNode &node) override;
   void visit(ast::WhileNode &node) override;
@@ -64,22 +87,68 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   void visit(ast::CompoundStmtNode &node) override;
 
  private:
+  SDTBuilder sdt_builder_;
   SymbolTable sym_table;
+  diag::Diagnoser &diagnoser_;
   bool has_errors_ = false;
 
-  void reportError(const std::string &message);
-  int resolveTypeSpec(ast::TypeSpecNode &spec);
-  int resolveSimpleTypeName(const std::string &name);
-  bool typesCompatible(int left, int right) const;
-  bool assignmentCompatible(int target, int value) const;
-  void visitExpr(ast::ExprNode &expr);
-  void visitStmt(ast::StmtNode &stmt);
+  /**
+   * @brief Report error to diagnoser with source location from the given parse
+   * node's first token.
+   *
+   * @param message Error message to report.
+   * @param token Optional token to extract source location from
+   */
+  void reportError(const std::string &message,
+                   const lexer::Token *token = nullptr);
 
-  void checkTypeCompatibility(int expected_type, int actual_type,
-                              const std::string &context);
+  /**
+   * @brief Resolve the type specification and return its corresponding type ID.
+   *
+   * @param spec Type specification node to resolve.
+   * @return int Type ID corresponding to the resolved type.
+   */
+  int resolveTypeSpec(ast::TypeSpecNode &spec);
+
+  /**
+   * @brief Resolve the type of an expression and return its corresponding type
+   * ID.
+   *
+   * @param name Type name to resolve.
+   * @return int Type ID corresponding to the resolved type, or -1 if resolution
+   * fails.
+   */
+  int resolveSimpleTypeName(const std::string &name);
+
+  /**
+   * @brief Enter a new scope level in the symbol table.
+   *
+   */
   void enterScope();
+
+  /**
+   * @brief Leave the current scope level in the symbol table, discarding any
+   * symbols declared in that scope.
+   *
+   */
   void leaveScope();
+
+  /**
+   * @brief Get the base type ID for a given type name.
+   *
+   * @param type_name Name of the type.
+   * @return int Base type ID corresponding to the type name.
+   */
   int get_base_type(const std::string &type_name);
+
+  /**
+   * @brief Check if an expression of a given type can be assigned to a target
+   * of another type.
+   *
+   * @param target_type Type ID of the assignment target.
+   * @param expr_type Type ID of the expression being assigned.
+   * @return bool True if the assignment is compatible, false otherwise.
+   */
   bool isAssignmentCompatible(int target_type, int expr_type);
 };
 

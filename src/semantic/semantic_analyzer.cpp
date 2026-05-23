@@ -1,48 +1,45 @@
 #include "semantic/semantic_analyzer.hpp"
 
-#include <iostream>
-#include <string>
-
+#include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "semantic/symtable_entries.hpp"
 
 namespace semantic {
 
-namespace {
+SemanticAnalyzer::SemanticAnalyzer(const parser::ParseNode& parse_root,
+                                   diag::Diagnoser& diagnoser)
+    : sdt_builder_(parse_root, diagnoser), diagnoser_(diagnoser) {}
 
-std::string lower(std::string s) {
-  for (char& c : s) {
-    if (c >= 'A' && c <= 'Z') {
-      c = static_cast<char>(c - 'A' + 'a');
-    }
+void SemanticAnalyzer::analyze() {
+  sdt_builder_.build();
+  if (sdt_builder_.hasErrors()) return;
+  sdt_builder_.getAst().accept(*this);
+}
+
+const ast::AstNode& SemanticAnalyzer::getAst() const {
+  return sdt_builder_.getAst();
+}
+
+ast::AstNode& SemanticAnalyzer::getAst() {
+  return sdt_builder_.getAst();
+}
+
+void SemanticAnalyzer::reportError(const std::string& message,
+                                   const lexer::Token* token) {
+  diag::Source source{};
+  if (token != nullptr) {
+    source.line = token->line_num;
+    source.col = token->col_num;
+    source.length = static_cast<int>(
+        std::max<std::size_t>(1, token->lexeme.size()));
   }
-  return s;
-}
-
-bool isRelational(lexer::TokenType type) {
-  using lexer::TokenType;
-  return type == TokenType::EQL || type == TokenType::NEQ ||
-         type == TokenType::GTR || type == TokenType::GEQ ||
-         type == TokenType::LSS || type == TokenType::LEQ;
-}
-
-bool isArithmetic(lexer::TokenType type) {
-  using lexer::TokenType;
-  return type == TokenType::PLUS || type == TokenType::MINUS ||
-         type == TokenType::TIMES || type == TokenType::RDIV ||
-         type == TokenType::IDIV || type == TokenType::IMOD;
-}
-
-}  // namespace
-
-void SemanticAnalyzer::analyze(ast::AstNode& root) { root.accept(*this); }
-
-void SemanticAnalyzer::reportError(const std::string& message) {
-  std::cerr << "semantic error: " << message << '\n';
+  diagnoser_.report({diag::Phase::SEMANTIC, diag::Level::ERROR, source,
+                     message, ""});
   has_errors_ = true;
 }
 
 void SemanticAnalyzer::enterScope() { sym_table.pushBlock(); }
+void SemanticAnalyzer::leaveScope() { sym_table.popBlock(); }
 
 int SemanticAnalyzer::get_base_type(const std::string& type_name) {
   auto entry = sym_table.lookup(type_name);
@@ -50,15 +47,12 @@ int SemanticAnalyzer::get_base_type(const std::string& type_name) {
 }
 
 bool SemanticAnalyzer::isAssignmentCompatible(int target_type, int expr_type) {
-  if (target_type == expr_type) return true;  // Aturan 1: Type yang sama
-
-  int real_type = get_base_type("real");
-  int int_type = get_base_type("integer");
-
-  if (target_type == real_type && expr_type == int_type) {
+  if (target_type == expr_type) return true;
+  if (target_type == get_base_type("real") &&
+      expr_type == get_base_type("integer")) {
     return true;
   }
-
   return false;
 }
+
 }  // namespace semantic

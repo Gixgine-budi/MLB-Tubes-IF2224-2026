@@ -1,39 +1,15 @@
-#include <string>
-
 #include "ast/type_nodes.hpp"
 #include "semantic/semantic_analyzer.hpp"
 #include "semantic/symtable_entries.hpp"
 
 namespace semantic {
 
-namespace {
-
-std::string lower(std::string s) {
-  for (char& c : s) {
-    if (c >= 'A' && c <= 'Z') {
-      c = static_cast<char>(c - 'A' + 'a');
-    }
-  }
-  return s;
-}
-
-}  // namespace
-
 int SemanticAnalyzer::resolveSimpleTypeName(const std::string& name) {
-  const std::string key = lower(name);
-  if (key == "integer") return BuiltinType::Integer;
-  if (key == "real") return BuiltinType::Real;
-  if (key == "boolean") return BuiltinType::Boolean;
-  if (key == "char") return BuiltinType::Char;
-  if (key == "string") return BuiltinType::String;
-
   if (auto entry = sym_table.lookup(name)) {
-    if (entry->obj == ObjClass::Type) {
-      return entry->type;
-    }
+    if (entry->obj == ObjClass::Type) return entry->idx;
   }
   reportError("unknown type '" + name + "'");
-  return BuiltinType::Void;
+  return 0;
 }
 
 int SemanticAnalyzer::resolveTypeSpec(ast::TypeSpecNode& spec) {
@@ -46,36 +22,26 @@ void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
 }
 
 void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
-  node.expression_type = BuiltinType::Subrange;
-  if (node.low != nullptr) {
-    node.low->accept(*this);
-  }
-  if (node.high != nullptr) {
-    node.high->accept(*this);
-  }
+  node.expression_type = get_base_type("integer");
+  if (node.low != nullptr) node.low->accept(*this);
+  if (node.high != nullptr) node.high->accept(*this);
 }
 
 void SemanticAnalyzer::visit(ast::ArrayTypeSpecNode& node) {
-  node.expression_type = BuiltinType::Array;
-  if (node.index_type != nullptr) {
-    resolveTypeSpec(*node.index_type);
-  }
-  if (node.element_type != nullptr) {
-    resolveTypeSpec(*node.element_type);
-  }
+  node.expression_type = get_base_type("integer");
+  if (node.index_type != nullptr) resolveTypeSpec(*node.index_type);
+  if (node.element_type != nullptr) resolveTypeSpec(*node.element_type);
 }
 
 void SemanticAnalyzer::visit(ast::RecordTypeSpecNode& node) {
-  node.expression_type = BuiltinType::Record;
+  node.expression_type = 0;
   for (auto& field : node.fields) {
-    if (field.second != nullptr) {
-      resolveTypeSpec(*field.second);
-    }
+    if (field.second != nullptr) resolveTypeSpec(*field.second);
   }
 }
 
 void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
-  node.expression_type = BuiltinType::Enumerated;
+  node.expression_type = 0;
 }
 
 void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
@@ -106,12 +72,10 @@ void SemanticAnalyzer::visit(ast::ProgramNode& node) {
     }
   } else {
     sym_table.enterTab(node.identifier.lexeme, ObjClass::Type,
-                       BuiltinType::Program);
+                       get_base_type("integer"));
   }
 
-  if (node.block == nullptr) {
-    return;
-  }
+  if (node.block == nullptr) return;
 
   for (const auto& decl : node.block->declarations) {
     decl->accept(*this);
@@ -143,6 +107,7 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
   }
 
   const int var_type = resolveTypeSpec(*spec);
+  node.expression_type = var_type;
 
   for (const auto& id : node.identifiers) {
     if (auto existing = sym_table.lookup(id.lexeme)) {
@@ -153,9 +118,13 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
         reportError("identifier '" + id.lexeme + "' already declared");
       }
     }
-    const int idx = sym_table.enterTab(id.lexeme, ObjClass::Variable, var_type);
-    node.tab_index = idx;
-    node.expression_type = var_type;
+    sym_table.enterTab(id.lexeme, ObjClass::Variable, var_type);
+  }
+  // tab_index points to the first identifier registered for this declaration
+  if (!node.identifiers.empty()) {
+    if (auto entry = sym_table.lookup(node.identifiers[0].lexeme)) {
+      node.tab_index = entry->idx;
+    }
   }
 }
 
@@ -183,21 +152,26 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
   if (sym_table.lookup(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
   }
-  sym_table.enterTab(node.identifier.lexeme, ObjClass::Procedure,
-                     BuiltinType::Void);
+  node.tab_index = sym_table.enterTab(node.identifier.lexeme,
+                                      ObjClass::Procedure, 0);
 
   enterScope();
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
     const int param_type =
-        spec != nullptr ? resolveTypeSpec(*spec) : BuiltinType::Void;
+        spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
       sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
                          param->is_var ? 0 : 1);
     }
   }
   if (node.block != nullptr) {
-    node.block->accept(*this);
+    for (const auto& decl : node.block->declarations) {
+      decl->accept(*this);
+    }
+    if (node.block->compound_stmt != nullptr) {
+      node.block->compound_stmt->accept(*this);
+    }
   }
   leaveScope();
 }
@@ -205,25 +179,31 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
 void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
   auto* ret_spec = dynamic_cast<ast::TypeSpecNode*>(node.return_type.get());
   const int return_type =
-      ret_spec != nullptr ? resolveTypeSpec(*ret_spec) : BuiltinType::Void;
+      ret_spec != nullptr ? resolveTypeSpec(*ret_spec) : 0;
 
   if (sym_table.lookup(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
   }
-  sym_table.enterTab(node.identifier.lexeme, ObjClass::Function, return_type);
+  node.tab_index = sym_table.enterTab(node.identifier.lexeme,
+                                      ObjClass::Function, return_type);
 
   enterScope();
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
     const int param_type =
-        spec != nullptr ? resolveTypeSpec(*spec) : BuiltinType::Void;
+        spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
       sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
                          param->is_var ? 0 : 1);
     }
   }
   if (node.block != nullptr) {
-    node.block->accept(*this);
+    for (const auto& decl : node.block->declarations) {
+      decl->accept(*this);
+    }
+    if (node.block->compound_stmt != nullptr) {
+      node.block->compound_stmt->accept(*this);
+    }
   }
   leaveScope();
 }
