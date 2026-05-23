@@ -5,19 +5,16 @@
 
 namespace semantic {
 
-// Helper fungsi untuk mendapatkan index tipe dasar dari symbol table
-static int get_base_type(SymbolTable& sym_table, const std::string& type_name) {
-    auto entry = sym_table.lookup(type_name);
-    return entry ? entry->idx : 0;
-}
-
 void SemanticAnalyzer::visit(ast::NumberNode &node) {
-    // Jika is_real true, set tipe ke Real, jika tidak set ke Integer
-    node.expression_type = node.is_real ? get_base_type(sym_table, "real") : get_base_type(sym_table, "integer");
+    node.expression_type = node.is_real ? get_base_type("real") : get_base_type("integer");
 }
 
 void SemanticAnalyzer::visit(ast::StringNode &node) {
-    node.expression_type = get_base_type(sym_table, "string");
+    if (node.val.type == lexer::TokenType::CHARCON) {
+        node.expression_type = get_base_type("char");
+    } else {
+        node.expression_type = get_base_type("string");
+    }
 }
 
 void SemanticAnalyzer::visit(ast::IdentNode &node) {
@@ -31,7 +28,6 @@ void SemanticAnalyzer::visit(ast::IdentNode &node) {
 }
 
 void SemanticAnalyzer::visit(ast::BinOpNode &node) {
-    // Traverse anak secara Depth-First Search
     node.left->accept(*this);
     node.right->accept(*this);
 
@@ -40,16 +36,13 @@ void SemanticAnalyzer::visit(ast::BinOpNode &node) {
     std::string op = node.op.lexeme;
     std::transform(op.begin(), op.end(), op.begin(), ::tolower);
 
-    int int_type = get_base_type(sym_table, "integer");
-    int real_type = get_base_type(sym_table, "real");
-    int bool_type = get_base_type(sym_table, "boolean");
-    int str_type = get_base_type(sym_table, "string");
-    int char_type = get_base_type(sym_table, "char");
+    int int_type = get_base_type("integer");
+    int real_type = get_base_type("real");
+    int bool_type = get_base_type("boolean");
 
     // 1. Operator Aritmatika (+, -, *)
     if (op == "+" || op == "-" || op == "*") {
         if ((l_type == int_type || l_type == real_type) && (r_type == int_type || r_type == real_type)) {
-            // Jika salah satu real, hasilnya real. Jika keduanya int, hasilnya int.
             node.expression_type = (l_type == real_type || r_type == real_type) ? real_type : int_type;
         } else {
             std::cerr << "[Semantic Error] Operand untuk '" << op << "' harus bertipe numerik.\n";
@@ -59,7 +52,7 @@ void SemanticAnalyzer::visit(ast::BinOpNode &node) {
     // 2. Pembagian Real (/)
     else if (op == "/") {
         if ((l_type == int_type || l_type == real_type) && (r_type == int_type || r_type == real_type)) {
-            node.expression_type = real_type; // '/' selalu menghasilkan real
+            node.expression_type = real_type;
         } else {
             std::cerr << "[Semantic Error] Operand untuk '/' harus bertipe numerik.\n";
             node.expression_type = 0;
@@ -76,7 +69,6 @@ void SemanticAnalyzer::visit(ast::BinOpNode &node) {
     }
     // 4. Operator Relasional (=, <>, <, >, <=, >=)
     else if (op == "=" || op == "<>" || op == "<" || op == ">" || op == "<=" || op == ">=") {
-        // Asumsi relasional memperbolehkan kompatibilitas numerik (int vs real)
         if (l_type == r_type || 
            ((l_type == int_type || l_type == real_type) && (r_type == int_type || r_type == real_type))) {
             node.expression_type = bool_type;
@@ -104,12 +96,14 @@ void SemanticAnalyzer::visit(ast::UnaryOpNode &node) {
     std::transform(op.begin(), op.end(), op.begin(), ::tolower);
     
     if (op == "not") {
-        checkTypeCompatibility(get_base_type(sym_table, "boolean"), node.expr->expression_type, "Unary NOT");
-        node.expression_type = get_base_type(sym_table, "boolean");
+        if (node.expr->expression_type != get_base_type("boolean")) {
+            std::cerr << "[Semantic Error] Operand untuk NOT harus bertipe boolean.\n";
+        }
+        node.expression_type = get_base_type("boolean");
     } 
     else if (op == "+" || op == "-") {
-        int int_type = get_base_type(sym_table, "integer");
-        int real_type = get_base_type(sym_table, "real");
+        int int_type = get_base_type("integer");
+        int real_type = get_base_type("real");
         if (node.expr->expression_type == int_type || node.expr->expression_type == real_type) {
             node.expression_type = node.expr->expression_type;
         } else {
@@ -131,7 +125,7 @@ void SemanticAnalyzer::visit(ast::FuncCallNode &node) {
         node.expression_type = entry->type;
     }
     
-    // Visit argumen untuk type checking (Bisa ditambahkan pengecekan jumlah argumen via btab)
+    // Visit argumen untuk type checking
     for (auto &arg : node.args) {
         arg->accept(*this);
     }
@@ -142,19 +136,19 @@ void SemanticAnalyzer::visit(ast::ArrayAccessNode &node) {
     
     for (auto &idx : node.indices) {
         idx->accept(*this);
-        // Indeks array harus berupa integer atau simple type (Bukan Real berdasarkan spesifikasi)
-        if (idx->expression_type == get_base_type(sym_table, "real")) {
+        // Indeks array tidak boleh bertipe real
+        if (idx->expression_type == get_base_type("real")) {
              std::cerr << "[Semantic Error] Array index tidak boleh bertipe Real.\n";
         }
     }
     
-    // Mengekstrak element type (etyp) menggunakan data dari tab dan atab yang dibuat Akmal
+    // Ekstraksi etyp menggunakan data dari tab dan atab
     int array_type_idx = node.array_expr->expression_type;
     if (array_type_idx > 0) {
         const auto& type_entry = sym_table.getTabEntry(array_type_idx);
-        if (type_entry.ref > 0) { // Pointer ke atab
+        if (type_entry.ref > 0) { 
             const auto& array_info = sym_table.getAtabEntry(type_entry.ref);
-            node.expression_type = array_info.etyp; // Mengambil tipe dari elemen array
+            node.expression_type = array_info.etyp;
             return;
         }
     }
@@ -170,12 +164,12 @@ void SemanticAnalyzer::visit(ast::RecordAccessNode &node) {
     if (record_type_idx > 0) {
         const auto& type_entry = sym_table.getTabEntry(record_type_idx);
         
-        // Membuka scope record dari btab (disimpan di type_entry.ref)
+        // Membuka scope record dari btab
         if (type_entry.ref > 0) {
             const auto& block_info = sym_table.getBtabEntry(type_entry.ref);
             int current_link = block_info.last;
             
-            // Loop menelusuri field record (Linked list mundur via link attribute)
+            // Mencari field (Linked list)
             while (current_link > 0) {
                 const auto& field_entry = sym_table.getTabEntry(current_link);
                 if (field_entry.id == node.field.lexeme) {

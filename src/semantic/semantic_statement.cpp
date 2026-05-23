@@ -1,25 +1,9 @@
 #include "semantic/semantic_analyzer.hpp"
 #include "ast/stmt_nodes.hpp"
 #include <iostream>
+#include <algorithm>
 
 namespace semantic {
-
-static int get_base_type(SymbolTable& sym_table, const std::string& type_name) {
-    auto entry = sym_table.lookup(type_name);
-    return entry ? entry->idx : 0;
-}
-
-static bool isAssignmentCompatible(SymbolTable& sym_table, int target_type, int expr_type) {
-    if (target_type == expr_type) return true; // Aturan 1: Type yang sama
-    
-    int real_type = get_base_type(sym_table, "real");
-    int int_type = get_base_type(sym_table, "integer");
-    
-    if (target_type == real_type && expr_type == int_type) {
-        return true;
-    }
-    return false;
-}
 
 void SemanticAnalyzer::visit(ast::AssignNode &node) {
     node.target->accept(*this);
@@ -28,9 +12,9 @@ void SemanticAnalyzer::visit(ast::AssignNode &node) {
     int target_type = node.target->expression_type;
     int expr_type = node.expr->expression_type;
 
-    if (target_type == 0 || expr_type == 0) return; // Error cascade prevention
+    if (target_type == 0 || expr_type == 0) return; // Mencegah error beruntun
 
-    if (!isAssignmentCompatible(sym_table, target_type, expr_type)) {
+    if (!isAssignmentCompatible(target_type, expr_type)) {
         std::cerr << "[Semantic Error] Type Incompatible untuk Assignment.\n";
     }
 }
@@ -38,8 +22,7 @@ void SemanticAnalyzer::visit(ast::AssignNode &node) {
 void SemanticAnalyzer::visit(ast::IfNode &node) {
     node.condition->accept(*this);
     
-    int bool_type = get_base_type(sym_table, "boolean");
-    if (node.condition->expression_type != bool_type) {
+    if (node.condition->expression_type != get_base_type("boolean")) {
         std::cerr << "[Semantic Error] Kondisi IF wajib bertipe Boolean.\n";
     }
 
@@ -52,8 +35,7 @@ void SemanticAnalyzer::visit(ast::IfNode &node) {
 void SemanticAnalyzer::visit(ast::WhileNode &node) {
     node.condition->accept(*this);
 
-    int bool_type = get_base_type(sym_table, "boolean");
-    if (node.condition->expression_type != bool_type) {
+    if (node.condition->expression_type != get_base_type("boolean")) {
         std::cerr << "[Semantic Error] Kondisi WHILE wajib bertipe Boolean.\n";
     }
 
@@ -66,8 +48,7 @@ void SemanticAnalyzer::visit(ast::RepeatNode &node) {
     }
     
     node.condition->accept(*this);
-    int bool_type = get_base_type(sym_table, "boolean");
-    if (node.condition->expression_type != bool_type) {
+    if (node.condition->expression_type != get_base_type("boolean")) {
         std::cerr << "[Semantic Error] Kondisi UNTIL wajib bertipe Boolean.\n";
     }
 }
@@ -76,22 +57,38 @@ void SemanticAnalyzer::visit(ast::ForNode &node) {
     auto entry = sym_table.lookup(node.iterator.lexeme);
     if (!entry) {
         std::cerr << "[Semantic Error] Undeclared iterator variable: " << node.iterator.lexeme << "\n";
+    } else {
+        // Validasi ekstra: Iterator WAJIB bertipe Integer (Ordinal)
+        int int_type = get_base_type("integer");
+        if (entry->type != int_type) {
+            std::cerr << "[Semantic Error] Tipe iterator pada FOR loop wajib bertipe Integer.\n";
+        }
     }
 
     node.initial->accept(*this);
     node.final->accept(*this);
 
-    if (entry && node.initial->expression_type != entry->type) {
-        std::cerr << "[Semantic Error] Nilai awal iterasi tidak compatible dengan tipe iterator.\n";
+    if (entry && !isAssignmentCompatible(entry->type, node.initial->expression_type)) {
+        std::cerr << "[Semantic Error] Nilai awal iterasi tidak assignment-compatible dengan tipe iterator.\n";
     }
-    if (entry && node.final->expression_type != entry->type) {
-        std::cerr << "[Semantic Error] Nilai akhir iterasi tidak compatible dengan tipe iterator.\n";
+    if (entry && !isAssignmentCompatible(entry->type, node.final->expression_type)) {
+        std::cerr << "[Semantic Error] Nilai akhir iterasi tidak assignment-compatible dengan tipe iterator.\n";
     }
 
     node.body->accept(*this);
 }
 
 void SemanticAnalyzer::visit(ast::ProcCallNode &node) {
+    std::string proc_name = node.id.lexeme;
+    std::transform(proc_name.begin(), proc_name.end(), proc_name.begin(), ::tolower);
+
+    if (proc_name == "writeln" || proc_name == "readln" || proc_name == "write" || proc_name == "read") {
+        for (auto &arg : node.args) {
+            arg->accept(*this);
+        }
+        return; 
+    }
+
     auto entry = sym_table.lookup(node.id.lexeme);
     if (!entry) {
         std::cerr << "[Semantic Error] Undeclared procedure: " << node.id.lexeme << "\n";
@@ -99,14 +96,13 @@ void SemanticAnalyzer::visit(ast::ProcCallNode &node) {
         std::cerr << "[Semantic Error] Identifier '" << node.id.lexeme << "' is not a procedure.\n";
     }
 
-    // Melakukan Type Checking pada Argumen Parameter vs Caller Arguments (Bisa menggunakan btab)
     for (auto &arg : node.args) {
         arg->accept(*this);
     }
 }
 
 void SemanticAnalyzer::visit(ast::CompoundStmtNode &node) {
-    // Traverse seluruh statement berurutan
+
     for (auto &stmt : node.statements) {
         stmt->accept(*this);
     }
