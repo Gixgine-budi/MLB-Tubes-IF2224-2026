@@ -4,6 +4,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -47,12 +48,50 @@ bool useASCII() {
   return false;
 }
 
+void writeTokens(std::ostream& out, const std::vector<lexer::Token>& tokens) {
+  for (const auto& token : tokens) {
+    out << token << '\n';
+  }
+}
+
+void writeParseTree(std::ostream& out, const parser::Parser& parser,
+                    bool ascii) {
+  parser.printParseTree(out, ascii);
+}
+
+void writeAst(std::ostream& out, ast::AstNode& ast_root, bool ascii) {
+  semantic::ASTPrinter printer(out, ascii);
+  printer.print(ast_root);
+}
+
+void writeSymbolTable(std::ostream& out, const semantic::SymbolTable& symtab) {
+  symtab.printTab(out);
+}
+
+void writeArrayTable(std::ostream& out, const semantic::SymbolTable& symtab) {
+  symtab.printAtab(out);
+}
+
+void writeBlockTable(std::ostream& out, const semantic::SymbolTable& symtab) {
+  symtab.printBtab(out);
+}
+
+std::unique_ptr<std::ofstream> openOutputFile(const std::string& path) {
+  auto file = std::make_unique<std::ofstream>(path);
+  if (!file->is_open()) {
+    throw std::runtime_error("arion: error: cannot open output file '" + path +
+                             "'");
+  }
+  return file;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
   std::string source_name;
   RunMode mode = RunMode::Semantic;
   bool dump = false;
+  bool dump_all = false;
 
   for (int i = 1; i < argc; ++i) {
     std::string arg = argv[i];
@@ -65,6 +104,8 @@ int main(int argc, char* argv[]) {
         mode = RunMode::Semantic;
       } else if (arg == "--dump" || arg == "-d") {
         dump = true;
+      } else if (arg == "--dump-all") {
+        dump_all = true;
       } else {
         std::cerr << "arion: error: unknown flag '" << arg << "'\n";
         return 1;
@@ -80,6 +121,12 @@ int main(int argc, char* argv[]) {
 
   if (source_name.empty()) {
     std::cerr << "arion: error: no source file specified\n";
+    return 1;
+  }
+
+  if (dump && dump_all) {
+    std::cerr
+        << "arion: error: --dump and --dump-all cannot be used together\n";
     return 1;
   }
 
@@ -103,21 +150,24 @@ int main(int argc, char* argv[]) {
 
     auto tokens = lexer.tokens();
 
+    const bool ascii = useASCII();
+
+    auto writeTokenFile = [&]() {
+      const std::string token_path = source_name + ".token";
+      auto token_file = openOutputFile(token_path);
+      writeTokens(*token_file, tokens);
+    };
+
+    auto dumpTokens = [&]() { writeTokens(std::cout, tokens); };
+
     if (mode == RunMode::Lexer) {
-      if (dump) {
-        for (const auto& token : tokens) {
-          std::cout << token << '\n';
+      if (dump || dump_all) {
+        if (dump_all) {
+          std::cout << "tokens:\n";
         }
+        dumpTokens();
       } else {
-        const std::string token_path = source_name + ".token";
-        std::ofstream token_file(token_path);
-        if (!token_file.is_open()) {
-          throw std::runtime_error("arion: error: cannot open output file '" +
-                                   token_path + "'");
-        }
-        for (const auto& token : tokens) {
-          token_file << token << '\n';
-        }
+        writeTokenFile();
       }
       return 0;
     }
@@ -130,19 +180,25 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
+    auto writeParseTreeFile = [&]() {
+      const std::string ptree_path = source_name + ".ptree";
+      auto ptree_file = openOutputFile(ptree_path);
+      writeParseTree(*ptree_file, parser, ascii);
+    };
+
+    auto dumpParseTree = [&]() { writeParseTree(std::cout, parser, ascii); };
+
     if (mode == RunMode::Parser) {
       if (dump) {
-        parser.printParseTree(useASCII());
+        dumpParseTree();
+      } else if (dump_all) {
+        std::cout << "tokens:\n";
+        dumpTokens();
+        std::cout << "\nparse tree:\n";
+        dumpParseTree();
       } else {
-        const std::string ptree_path = source_name + ".ptree";
-        std::ofstream ptree_file(ptree_path);
-        if (!ptree_file.is_open()) {
-          throw std::runtime_error("arion: error: cannot open output file '" +
-                                   ptree_path + "'");
-        }
-        auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());
-        parser.printParseTree();
-        std::cout.rdbuf(saved_buf);
+        writeTokenFile();
+        writeParseTreeFile();
       }
 
       return 0;
@@ -156,18 +212,63 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    if (dump) {
-      semantic::ASTPrinter printer(std::cout, useASCII());
-      printer.print(analyzer.getAst());
-    } else {
+    auto writeAstFile = [&]() {
       const std::string ast_path = source_name + ".ast";
-      std::ofstream ast_file(ast_path);
-      if (!ast_file.is_open()) {
-        throw std::runtime_error("arion: error: cannot open output file '" +
-                                 ast_path + "'");
-      }
-      semantic::ASTPrinter printer(ast_file, useASCII());
-      printer.print(analyzer.getAst());
+      auto ast_file = openOutputFile(ast_path);
+      writeAst(*ast_file, analyzer.getAst(), ascii);
+    };
+
+    auto writeSymTabFile = [&]() {
+      const std::string tab_path = source_name + ".sym.tab";
+      auto tab_file = openOutputFile(tab_path);
+      writeSymbolTable(*tab_file, analyzer.getSymbolTable());
+    };
+
+    auto writeSymAtabFile = [&]() {
+      const std::string atab_path = source_name + ".sym.atab";
+      auto atab_file = openOutputFile(atab_path);
+      writeArrayTable(*atab_file, analyzer.getSymbolTable());
+    };
+
+    auto writeSymBtabFile = [&]() {
+      const std::string btab_path = source_name + ".sym.btab";
+      auto btab_file = openOutputFile(btab_path);
+      writeBlockTable(*btab_file, analyzer.getSymbolTable());
+    };
+
+    auto dumpAst = [&]() { writeAst(std::cout, analyzer.getAst(), ascii); };
+
+    auto dumpSemanticTables = [&]() {
+      std::cout << "sym tab:\n";
+      std::cout << "tab:\n";
+      writeSymbolTable(std::cout, analyzer.getSymbolTable());
+      std::cout << "\nbtab:\n";
+      writeBlockTable(std::cout, analyzer.getSymbolTable());
+      std::cout << "\natab:\n";
+      writeArrayTable(std::cout, analyzer.getSymbolTable());
+    };
+
+    if (dump) {
+      std::cout << "ast:\n";
+      dumpAst();
+      std::cout << '\n';
+      dumpSemanticTables();
+    } else if (dump_all) {
+      std::cout << "tokens:\n";
+      dumpTokens();
+      std::cout << "\nparse tree:\n";
+      dumpParseTree();
+      std::cout << "\nast:\n";
+      dumpAst();
+      std::cout << '\n';
+      dumpSemanticTables();
+    } else {
+      writeTokenFile();
+      writeParseTreeFile();
+      writeAstFile();
+      writeSymTabFile();
+      writeSymAtabFile();
+      writeSymBtabFile();
     }
     return 0;
 

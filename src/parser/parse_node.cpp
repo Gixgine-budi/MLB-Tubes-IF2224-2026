@@ -1,7 +1,6 @@
 
 #include "parser/parse_node.hpp"
 
-#include <iostream>
 #include <ostream>
 
 #include "lexer/token.hpp"
@@ -107,18 +106,19 @@ std::ostream& operator<<(std::ostream& os, const ParseNode& node) {
   return os;
 }
 
-void ParseNode::print(bool ascii) const { printRecursive("", false, ascii); }
+void ParseNode::print(std::ostream& out, bool ascii) const {
+  printRecursive(out, "", false, ascii);
+}
 
-void ParseNode::printRecursive(const std::string& prefix, bool isLast,
-                               bool ascii) const {
-  std::cout << prefix
-            << (isLast ? (ascii ? "+- " : "└─ ") : (ascii ? "+- " : "├─ "))
-            << *this << "\n";
+void ParseNode::printRecursive(std::ostream& out, const std::string& prefix,
+                               bool isLast, bool ascii) const {
+  out << prefix << (isLast ? (ascii ? "+- " : "└─ ") : (ascii ? "+- " : "├─ "))
+      << *this << "\n";
 
   const std::string child_prefix =
       prefix + (isLast ? (ascii ? "   " : "  ") : (ascii ? "|  " : "│ "));
   for (size_t i = 0; i < children_.size(); ++i) {
-    children_[i]->printRecursive(child_prefix, i == children_.size() - 1,
+    children_[i]->printRecursive(out, child_prefix, i == children_.size() - 1,
                                  ascii);
   }
 }

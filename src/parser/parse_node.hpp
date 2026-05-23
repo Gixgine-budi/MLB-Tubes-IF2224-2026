@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -72,11 +73,11 @@ class ParseNode {
     children_.push_back(std::move(child));
   }
 
-  void print(bool ascii = false) const;
+  void print(std::ostream& out, bool ascii = false) const;
 
   friend std::ostream& operator<<(std::ostream& os, const ParseNode& node);
 
-  void printRecursive(const std::string& prefix, bool isLast,
+  void printRecursive(std::ostream& out, const std::string& prefix, bool isLast,
                       bool ascii = false) const;
 
  private:
