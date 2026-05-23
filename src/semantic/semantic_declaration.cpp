@@ -54,7 +54,7 @@ void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
   node.value->accept(*this);
   const int const_type = node.value->expression_type;
 
-  if (sym_table.lookup(node.identifier.lexeme)) {
+  if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
     return;
   }
@@ -110,14 +110,11 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
   node.expression_type = var_type;
 
   for (const auto& id : node.identifiers) {
-    if (auto existing = sym_table.lookup(id.lexeme)) {
-      if (existing->obj == ObjClass::Variable ||
-          existing->obj == ObjClass::Constant ||
-          existing->obj == ObjClass::Procedure ||
-          existing->obj == ObjClass::Function) {
-        reportError("identifier '" + id.lexeme + "' already declared");
-      }
+    if (sym_table.lookupCurrentScope(id.lexeme)) {
+      reportError("identifier '" + id.lexeme + "' already declared");
+      continue;
     }
+
     sym_table.enterTab(id.lexeme, ObjClass::Variable, var_type);
   }
   // tab_index points to the first identifier registered for this declaration
@@ -136,31 +133,33 @@ void SemanticAnalyzer::visit(ast::TypeDeclNode& node) {
   }
 
   const int type_code = resolveTypeSpec(*spec);
-  if (auto existing = sym_table.lookup(node.identifier.lexeme)) {
-    if (existing->obj != ObjClass::Type) {
-      reportError("identifier '" + node.identifier.lexeme +
-                  "' already declared");
-    }
-  } else {
-    node.tab_index =
-        sym_table.enterTab(node.identifier.lexeme, ObjClass::Type, type_code);
+  if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
+    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    return;
   }
+
+  node.tab_index =
+      sym_table.enterTab(node.identifier.lexeme, ObjClass::Type, type_code);
   node.expression_type = type_code;
 }
 
 void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
-  if (sym_table.lookup(node.identifier.lexeme)) {
+  if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    return;
   }
-  node.tab_index = sym_table.enterTab(node.identifier.lexeme,
-                                      ObjClass::Procedure, 0);
+  node.tab_index =
+      sym_table.enterTab(node.identifier.lexeme, ObjClass::Procedure, 0);
 
   enterScope();
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
-    const int param_type =
-        spec != nullptr ? resolveTypeSpec(*spec) : 0;
+    const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
+      if (sym_table.lookupCurrentScope(id.lexeme)) {
+        reportError("identifier '" + id.lexeme + "' already declared");
+        continue;
+      }
       sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
                          param->is_var ? 0 : 1);
     }
@@ -178,11 +177,11 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
 
 void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
   auto* ret_spec = dynamic_cast<ast::TypeSpecNode*>(node.return_type.get());
-  const int return_type =
-      ret_spec != nullptr ? resolveTypeSpec(*ret_spec) : 0;
+  const int return_type = ret_spec != nullptr ? resolveTypeSpec(*ret_spec) : 0;
 
-  if (sym_table.lookup(node.identifier.lexeme)) {
+  if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    return;
   }
   node.tab_index = sym_table.enterTab(node.identifier.lexeme,
                                       ObjClass::Function, return_type);
@@ -190,9 +189,12 @@ void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
   enterScope();
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
-    const int param_type =
-        spec != nullptr ? resolveTypeSpec(*spec) : 0;
+    const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
+      if (sym_table.lookupCurrentScope(id.lexeme)) {
+        reportError("identifier '" + id.lexeme + "' already declared");
+        continue;
+      }
       sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
                          param->is_var ? 0 : 1);
     }

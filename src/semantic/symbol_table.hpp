@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -8,10 +9,8 @@
 
 namespace semantic {
 
-// Note: jujur ini 33 nya masih di hardcode tolong nanti implementing yak
-
 class SymbolTable {
-public:
+ public:
   SymbolTable();
 
   /**
@@ -75,20 +74,76 @@ public:
    * @param id idenfiried to be looked up
    * @return std::optional<TabEntry> the result if exist, nullopt if not found
    */
-  std::optional<TabEntry> lookup(const std::string &id);
+  std::optional<TabEntry> lookup(const std::string &id) const;
 
-  const TabEntry &getTabEntry(int idx) const { return tab[idx - 33]; }
+  /**
+   * @brief Lookup an identifier in the tab table from the current context only
+   *
+   * @param id idenfiried to be looked up
+   * @return std::optional<TabEntry> the result if exist, nullopt if not found
+   */
+  std::optional<TabEntry> lookupCurrentScope(const std::string &id) const;
 
-  TabEntry &getTabEntry(int idx) { return tab[idx - 33]; }
+  /**
+   * @brief Print the tab table to the given output stream
+   *
+   * @param out the output stream to print to
+   */
+  void printTab(std::ostream &out) const;
 
+  /**
+   * @brief Print the array table to the given output stream
+   *
+   * @param out the output stream to print to
+   */
+  void printAtab(std::ostream &out) const;
+
+  /**
+   * @brief Print the block table to the given output stream
+   *
+   * @param out the output stream to print to
+   */
+  void printBtab(std::ostream &out) const;
+
+  /**
+   * @brief Get the Tab Entry object (const ref)
+   *
+   * @param idx global index of the entry
+   * @return const TabEntry& the entry object
+   */
+  const TabEntry &getTabEntry(int idx) const { return tab[idx - RESERVED]; }
+
+  /**
+   * @brief Get the Tab Entry object (non const ref)
+   *
+   * @param idx global index of the entry
+   * @return TabEntry& the entry object
+   */
+  TabEntry &getTabEntry(int idx) { return tab[idx - RESERVED]; }
+
+  /**
+   * @brief Get the Btab Entry object
+   *
+   * @param idx
+   * @return const BtabEntry&
+   */
   const BtabEntry &getBtabEntry(int idx) const { return btab[idx]; }
 
+  /**
+   * @brief Get the Atab Entry object
+   *
+   * @param idx
+   * @return const AtabEntry&
+   */
   const AtabEntry &getAtabEntry(int idx) const { return atab[idx]; }
 
-private:
+ private:
+  static std::string objClassName(ObjClass obj);
+
   std::vector<TabEntry> tab;
   std::vector<AtabEntry> atab;
   std::vector<BtabEntry> btab;
+  std::vector<std::string> reserved_words;
 
   std::vector<int> block_stack;
 
@@ -96,4 +151,4 @@ private:
   int last_idx = 0;
 };
 
-} // namespace semantic
+}  // namespace semantic

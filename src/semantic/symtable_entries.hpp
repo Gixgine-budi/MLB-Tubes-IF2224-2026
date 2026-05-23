@@ -111,6 +111,6 @@ enum class BuiltinType {
   Void
 };
 
-constexpr int kTabReservedCount = 33;
+constexpr int RESERVED = 33;
 
 }  // namespace semantic
