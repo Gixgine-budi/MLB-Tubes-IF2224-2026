@@ -1,12 +1,15 @@
 #pragma once
 
+#include <iosfwd>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "ast/ast_node.hpp"
 #include "ast/decl_nodes.hpp"
 #include "ast/expr_nodes.hpp"
 #include "ast/stmt_nodes.hpp"
+#include "diagnoser/diagnoser.hpp"
 #include "parser/parse_node.hpp"
 
 namespace semantic {
@@ -16,18 +19,69 @@ using Ptr = std::unique_ptr<T>;
 
 class SDTBuilder {
  public:
-  SDTBuilder() = default;
+  /**
+   * @brief Construct a builder bound to one parse-tree root.
+   *
+   * The parse root and diagnoser are borrowed references and must outlive this
+   * SDTBuilder instance.
+   */
+  SDTBuilder(const parser::ParseNode &parse_root, diag::Diagnoser &diagnoser);
   ~SDTBuilder() = default;
 
   /**
-   * @brief Translate a parse-tree root into an AST root.
+   * @brief Translate the bound parse-tree root into an AST root.
    *
-   * @param parse_node Parse tree root produced by the parser.
-   * @return AST root node (normally ast::ProgramNode), or nullptr on mismatch.
+   * The previous AST (if any) will be replaced. Semantic-phase diagnostics are
+   * accumulated into the bound diagnoser.
    */
-  Ptr<ast::AstNode> build(const parser::ParseNode &parse_node);
+  void build();
+
+  /**
+   * @brief Print current AST to stdout for debugging.
+   *
+   * @param ascii true for ASCII tree style, false for Unicode style.
+   */
+  void print(bool ascii = false) const;
+
+  /**
+   * @brief Print current AST to a stream for debugging.
+   *
+   * @param os output stream target.
+   * @param ascii true for ASCII tree style, false for Unicode style.
+   */
+  void print(std::ostream &os, bool ascii = false) const;
+
+  /**
+   * @brief Whether build() has produced a non-null AST root.
+   */
+  bool hasAst() const { return ast_root_ != nullptr; }
+
+  /**
+   * @brief Whether this builder has emitted semantic diagnostics.
+   */
+  bool hasErrors() const { return has_errors_; }
+
+  /**
+   * @brief Access built AST root.
+   *
+   * @return const reference to AST root.
+   * @throws std::logic_error if build() has not produced an AST yet.
+   */
+  const ast::AstNode &getAst() const;
 
  private:
+  const parser::ParseNode &parse_root_;
+  diag::Diagnoser &diagnoser_;
+  Ptr<ast::AstNode> ast_root_;
+  bool built_ = false;
+  bool has_errors_ = false;
+
+  void reportBuildError(const parser::ParseNode &node,
+                        const std::string &message,
+                        const std::string &hint = "");
+
+  const lexer::Token *firstToken(const parser::ParseNode &node) const;
+
   /**
    * @brief Build ast::ProgramNode from a Program parse node.
    *
