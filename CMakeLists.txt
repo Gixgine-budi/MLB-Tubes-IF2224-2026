@@ -26,7 +26,6 @@ add_library(
 
 add_library(
   arion_parser
-  
   src/parser/parse_node.cpp
   src/parser/parser.cpp
   src/parser/parse_header.cpp
@@ -35,19 +34,27 @@ add_library(
   src/parser/parse_expression.cpp
 )
 
-target_include_directories(arion_io PUBLIC src)
-target_include_directories(arion_diag PUBLIC src)
-target_include_directories(arion_lexer PUBLIC src)
-target_include_directories(arion_parser PUBLIC src)
+add_library(
+  arion_semantic
+  src/semantic/sdt_builder.cpp
+  src/semantic/sdt_declaration.cpp
+  src/semantic/sdt_statement.cpp
+  src/semantic/sdt_expression.cpp
+)
 
-# 
 target_include_directories(arion_io PUBLIC src)
 target_include_directories(arion_diag PUBLIC src)
 target_include_directories(arion_lexer PUBLIC src)
 target_include_directories(arion_parser PUBLIC src)
+target_include_directories(arion_semantic PUBLIC src)
+
+target_include_directories(arion_io PUBLIC src)
+target_include_directories(arion_diag PUBLIC src)
+target_include_directories(arion_lexer PUBLIC src)
+target_include_directories(arion_parser PUBLIC src)
+target_include_directories(arion_semantic PUBLIC src)
 
 target_link_libraries(arion_lexer PUBLIC arion_diag)
-# 
 
 add_executable(arion src/main.cpp)
 
@@ -55,7 +62,8 @@ target_link_libraries(arion_diag PUBLIC arion_io)
 target_link_libraries(arion_lexer PUBLIC arion_diag)
 target_link_libraries(arion_parser PUBLIC arion_lexer)
 target_link_libraries(arion_parser PUBLIC arion_diag)
-target_link_libraries(arion PRIVATE arion_parser)
+target_link_libraries(arion_semantic PUBLIC arion_parser)
+target_link_libraries(arion PRIVATE arion_semantic)
 
 if(MSVC)
   target_compile_options(arion PRIVATE /W4)
