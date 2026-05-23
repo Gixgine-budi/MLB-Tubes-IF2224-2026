@@ -18,6 +18,8 @@ class ArrayTypeSpecNode;
 class RecordTypeSpecNode;
 class EnumTypeSpecNode;
 
+// Declarations
+
 class ConstDeclNode;
 class VarDeclNode;
 class TypeDeclNode;

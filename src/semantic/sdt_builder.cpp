@@ -1,7 +1,6 @@
 #include "semantic/sdt_builder.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 
 #include "ast/ast_node.hpp"
@@ -10,26 +9,6 @@
 #include "parser/parse_node.hpp"
 
 namespace semantic {
-
-namespace {
-
-const char *rootType(const ast::AstNode &node) {
-  if (dynamic_cast<const ast::ProgramNode *>(&node) != nullptr) {
-    return "ProgramNode";
-  }
-  if (dynamic_cast<const ast::BlockNode *>(&node) != nullptr) {
-    return "BlockNode";
-  }
-  if (dynamic_cast<const ast::StmtNode *>(&node) != nullptr) {
-    return "StmtNode";
-  }
-  if (dynamic_cast<const ast::ExprNode *>(&node) != nullptr) {
-    return "ExprNode";
-  }
-  return "AstNode";
-}
-
-}  // namespace
 
 SDTBuilder::SDTBuilder(const parser::ParseNode &parse_root,
                        diag::Diagnoser &diagnoser)
@@ -55,43 +34,15 @@ void SDTBuilder::build() {
   ast_root_ = std::move(program);
 }
 
-void SDTBuilder::print(bool ascii) const { print(std::cout, ascii); }
-
-void SDTBuilder::print(std::ostream &os, bool ascii) const {
-  (void)ascii;
-
-  if (!built_) {
-    os << "SDTBuilder: build() has not been called.\n";
-    return;
-  }
-
+const ast::AstNode &SDTBuilder::getAst() const {
   if (ast_root_ == nullptr) {
-    os << "SDTBuilder: AST root is null.\n";
-    return;
+    throw std::logic_error(
+        "SDTBuilder::getAst() called before a successful build()");
   }
-
-  if (const auto *program =
-          dynamic_cast<const ast::ProgramNode *>(ast_root_.get())) {
-    os << "ProgramNode(name: '" << program->identifier.lexeme << "')\n";
-
-    if (program->block != nullptr) {
-      const size_t decl_count = program->block->declarations.size();
-      const size_t stmt_count =
-          program->block->compound_stmt != nullptr
-              ? program->block->compound_stmt->statements.size()
-              : 0;
-
-      os << "  declarations: " << decl_count << "\n";
-      os << "  statements: " << stmt_count << "\n";
-    }
-
-    return;
-  }
-
-  os << rootType(*ast_root_) << "\n";
+  return *ast_root_;
 }
 
-const ast::AstNode &SDTBuilder::getAst() const {
+ast::AstNode &SDTBuilder::getAst() {
   if (ast_root_ == nullptr) {
     throw std::logic_error(
         "SDTBuilder::getAst() called before a successful build()");

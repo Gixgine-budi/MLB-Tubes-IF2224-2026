@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iosfwd>
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,21 +36,6 @@ class SDTBuilder {
   void build();
 
   /**
-   * @brief Print current AST to stdout for debugging.
-   *
-   * @param ascii true for ASCII tree style, false for Unicode style.
-   */
-  void print(bool ascii = false) const;
-
-  /**
-   * @brief Print current AST to a stream for debugging.
-   *
-   * @param os output stream target.
-   * @param ascii true for ASCII tree style, false for Unicode style.
-   */
-  void print(std::ostream &os, bool ascii = false) const;
-
-  /**
    * @brief Whether build() has produced a non-null AST root.
    */
   bool hasAst() const { return ast_root_ != nullptr; }
@@ -68,6 +52,13 @@ class SDTBuilder {
    * @throws std::logic_error if build() has not produced an AST yet.
    */
   const ast::AstNode &getAst() const;
+
+  /**
+   * @brief Get the Ast object (non-const) for mutation
+   *
+   * @return ast::AstNode&
+   */
+  ast::AstNode &getAst();
 
  private:
   const parser::ParseNode &parse_root_;
