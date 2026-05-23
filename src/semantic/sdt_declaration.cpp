@@ -2,14 +2,152 @@
 
 #include "ast/ast_node.hpp"
 #include "ast/decl_nodes.hpp"
+#include "ast/expr_nodes.hpp"
+#include "ast/type_nodes.hpp"
+#include "lexer/token.hpp"
 #include "parser/parse_node.hpp"
 #include "semantic/sdt_builder.hpp"
 
 namespace semantic {
 
-// Placeholder type build - returning nullptr for now until Types are mapped
-Ptr<ast::AstNode> buildTypeHelper(const parser::ParseNode &node) {
-  return nullptr;
+namespace {
+
+Ptr<ast::ExprNode> buildConstantExpr(const parser::ParseNode &node) {
+  if (node.type() != parser::NodeType::Constant || node.children().empty()) {
+    return nullptr;
+  }
+
+  const auto &children = node.children();
+  const auto &first = children[0];
+  if (first->type() != parser::NodeType::TokenNode || !first->token()) {
+    return nullptr;
+  }
+
+  const lexer::Token first_tok = first->token().value();
+  if ((first_tok.type == lexer::TokenType::PLUS ||
+       first_tok.type == lexer::TokenType::MINUS) &&
+      children.size() >= 2 &&
+      children[1]->type() == parser::NodeType::TokenNode &&
+      children[1]->token()) {
+    const lexer::Token body_tok = children[1]->token().value();
+    Ptr<ast::ExprNode> body_expr;
+    if (body_tok.type == lexer::TokenType::INTCON ||
+        body_tok.type == lexer::TokenType::REALCON) {
+      body_expr = std::make_unique<ast::NumberNode>(
+          body_tok, body_tok.type == lexer::TokenType::REALCON);
+    } else {
+      body_expr = std::make_unique<ast::IdentNode>(body_tok);
+    }
+    return std::make_unique<ast::UnaryOpNode>(first_tok, std::move(body_expr));
+  }
+
+  if (first_tok.type == lexer::TokenType::INTCON ||
+      first_tok.type == lexer::TokenType::REALCON) {
+    return std::make_unique<ast::NumberNode>(
+        first_tok, first_tok.type == lexer::TokenType::REALCON);
+  }
+  if (first_tok.type == lexer::TokenType::CHARCON ||
+      first_tok.type == lexer::TokenType::STRING) {
+    return std::make_unique<ast::StringNode>(first_tok);
+  }
+  return std::make_unique<ast::IdentNode>(first_tok);
+}
+
+}  // namespace
+
+Ptr<ast::TypeSpecNode> SDTBuilder::buildTypeSpec(
+    const parser::ParseNode &node) {
+  using parser::NodeType;
+
+  switch (node.type()) {
+    case NodeType::Type:
+      if (node.children().empty()) return nullptr;
+      return buildTypeSpec(*node.children()[0]);
+
+    case NodeType::TokenNode:
+      if (node.token().has_value() &&
+          node.token()->type == lexer::TokenType::IDENT) {
+        return std::make_unique<ast::SimpleTypeSpecNode>(node.token().value());
+      }
+      return nullptr;
+
+    case NodeType::Range: {
+      if (node.children().size() < 4) return nullptr;
+      std::unique_ptr<ast::AstNode> low =
+          buildConstantExpr(*node.children()[0]);
+      std::unique_ptr<ast::AstNode> high =
+          buildConstantExpr(*node.children()[3]);
+      return std::make_unique<ast::SubrangeTypeSpecNode>(std::move(low),
+                                                         std::move(high));
+    }
+
+    case NodeType::ArrayType: {
+      if (node.children().size() < 6) return nullptr;
+
+      Ptr<ast::TypeSpecNode> index_type;
+      const auto &index_node = *node.children()[2];
+      if (index_node.type() == NodeType::TokenNode && index_node.token() &&
+          index_node.token()->type == lexer::TokenType::IDENT) {
+        index_type = std::make_unique<ast::SimpleTypeSpecNode>(
+            index_node.token().value());
+      } else {
+        index_type = buildTypeSpec(index_node);
+      }
+
+      auto element_type = buildTypeSpec(*node.children()[5]);
+      return std::make_unique<ast::ArrayTypeSpecNode>(std::move(index_type),
+                                                      std::move(element_type));
+    }
+
+    case NodeType::Enumerated: {
+      std::vector<lexer::Token> literals;
+      literals.reserve(node.children().size());
+      for (const auto &child : node.children()) {
+        if (child->type() == NodeType::TokenNode && child->token() &&
+            child->token()->type == lexer::TokenType::IDENT) {
+          literals.push_back(child->token().value());
+        }
+      }
+      return std::make_unique<ast::EnumTypeSpecNode>(std::move(literals));
+    }
+
+    case NodeType::RecordType: {
+      std::vector<std::pair<std::vector<lexer::Token>,
+                            std::unique_ptr<ast::TypeSpecNode>>>
+          fields;
+
+      if (node.children().size() >= 2 &&
+          node.children()[1]->type() == NodeType::FieldList) {
+        const auto &field_list = node.children()[1];
+        for (const auto &entry : field_list->children()) {
+          if (entry->type() != NodeType::FieldPart) continue;
+
+          std::vector<lexer::Token> ids;
+          if (!entry->children().empty() &&
+              entry->children()[0]->type() == NodeType::IdentifierList) {
+            for (const auto &id_node : entry->children()[0]->children()) {
+              if (id_node->type() == NodeType::TokenNode && id_node->token() &&
+                  id_node->token()->type == lexer::TokenType::IDENT) {
+                ids.push_back(id_node->token().value());
+              }
+            }
+          }
+
+          std::unique_ptr<ast::TypeSpecNode> field_type = nullptr;
+          if (entry->children().size() >= 3) {
+            field_type = buildTypeSpec(*entry->children()[2]);
+          }
+
+          fields.emplace_back(std::move(ids), std::move(field_type));
+        }
+      }
+
+      return std::make_unique<ast::RecordTypeSpecNode>(std::move(fields));
+    }
+
+    default:
+      return nullptr;
+  }
 }
 
 std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
@@ -32,7 +170,7 @@ std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
         }
         const auto &type_node = child->children()[i + 2];
         decls.push_back(std::make_unique<ast::VarDeclNode>(
-            std::move(ids), buildTypeHelper(*type_node)));
+            std::move(ids), buildTypeSpec(*type_node)));
       }
     } else if (child->type() == parser::NodeType::TypeDeclaration) {
       size_t child_count = child->children().size();
@@ -42,7 +180,7 @@ std::vector<Ptr<ast::AstNode>> SDTBuilder::buildDeclarations(
         lexer::Token id_tok = id_node->token().value();
         const auto &type_node = child->children()[i + 2];
         decls.push_back(std::make_unique<ast::TypeDeclNode>(
-            id_tok, buildTypeHelper(*type_node)));
+            id_tok, buildTypeSpec(*type_node)));
       }
     } else if (child->type() == parser::NodeType::SubprogramDeclaration) {
       if (!child->children().empty()) {
@@ -105,7 +243,7 @@ Ptr<ast::FuncDeclNode> SDTBuilder::buildFuncDecl(
 
   lexer::Token id_tok;
   std::vector<Ptr<ast::ParameterNode>> params;
-  Ptr<ast::AstNode> ret_type = nullptr;
+  Ptr<ast::TypeSpecNode> ret_type = nullptr;
   Ptr<ast::BlockNode> block;
 
   size_t idx = 1;
@@ -125,6 +263,12 @@ Ptr<ast::FuncDeclNode> SDTBuilder::buildFuncDecl(
 
   if (idx < node.children().size() &&
       node.children()[idx]->type() == parser::NodeType::TokenNode) {
+    const auto &ret_tok_node = node.children()[idx];
+    if (ret_tok_node->token().has_value() &&
+        ret_tok_node->token()->type == lexer::TokenType::IDENT) {
+      ret_type = std::make_unique<ast::SimpleTypeSpecNode>(
+          ret_tok_node->token().value());
+    }
     idx++;  // Read return type
   }
 
@@ -169,9 +313,9 @@ std::vector<Ptr<ast::ParameterNode>> SDTBuilder::buildFormalParameters(
 
       c_idx++;  // Skip ':'
 
-      Ptr<ast::AstNode> type_node = nullptr;
+      Ptr<ast::TypeSpecNode> type_node = nullptr;
       if (c_idx < child->children().size()) {
-        type_node = buildTypeHelper(*child->children()[c_idx]);
+        type_node = buildTypeSpec(*child->children()[c_idx]);
       }
 
       params.push_back(std::make_unique<ast::ParameterNode>(
