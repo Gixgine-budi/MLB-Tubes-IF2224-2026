@@ -1,0 +1,14 @@
+program ForLoop;
+var
+    i, s: integer;
+begin
+    s := 0;
+    for i := 1 to 10 do
+    begin
+        s := s + i;
+    end;
+    for i := 10 downto 1 do
+    begin
+        s := s - i;
+    end;
+end.

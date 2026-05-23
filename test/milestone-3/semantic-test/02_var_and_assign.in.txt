@@ -1,0 +1,10 @@
+program VarAssign;
+var
+    x, y: integer;
+    r: real;
+begin
+    x := 42;
+    y := x + 1;
+    r := 3.14;
+    x := y * 2 - 1;
+end.

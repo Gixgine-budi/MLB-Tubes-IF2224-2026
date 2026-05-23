@@ -1,0 +1,11 @@
+program CaseStmt;
+var
+    grade: integer;
+begin
+    grade := 2;
+    case grade of
+        1: grade := 10;
+        2, 3: grade := 20;
+        4: grade := 40;
+    end;
+end.

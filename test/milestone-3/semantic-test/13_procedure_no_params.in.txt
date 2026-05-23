@@ -1,0 +1,8 @@
+program ProcNoParams;
+procedure SayHello;
+begin
+    writeln('hello');
+end;
+begin
+    SayHello();
+end.

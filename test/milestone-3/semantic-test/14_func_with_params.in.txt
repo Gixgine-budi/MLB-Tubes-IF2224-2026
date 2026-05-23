@@ -1,0 +1,12 @@
+program FuncWithParams;
+function Add(a, b: integer): integer;
+begin
+    Add := a + b;
+end;
+procedure PrintSum(x: integer; y: integer);
+begin
+    writeln(Add(x, y));
+end;
+begin
+    PrintSum(3, 4);
+end.
