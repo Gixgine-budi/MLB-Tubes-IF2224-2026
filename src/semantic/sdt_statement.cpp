@@ -67,10 +67,6 @@ Ptr<ast::ExprNode> buildCaseConstantExpr(const parser::ParseNode& node) {
   return std::make_unique<ast::IdentNode>(tok);
 }
 
-lexer::Token syntheticToken(TokenType type, const char* lexeme) {
-  return lexer::Token{type, lexer::InvalidType::NotInvalid, lexeme, 0, 0};
-}
-
 Ptr<ast::ExprNode> buildIndexExpr(const parser::ParseNode& index_list,
                                   SDTBuilder& builder) {
   for (const auto& child : index_list.children()) {
@@ -445,8 +441,8 @@ Ptr<ast::StmtNode> SDTBuilder::buildCase(const parser::ParseNode& node) {
     }
 
     Ptr<ast::ExprNode> condition;
-    const lexer::Token eql_tok = syntheticToken(TokenType::EQL, "=");
-    const lexer::Token or_tok = syntheticToken(TokenType::ORSY, "or");
+    const lexer::Token eql_tok = lexer::Token(TokenType::EQL, "=");
+    const lexer::Token or_tok = lexer::Token(TokenType::ORSY, "or");
 
     for (auto& label : labels) {
       auto lhs = buildExpressionLocal(*this, *selector);

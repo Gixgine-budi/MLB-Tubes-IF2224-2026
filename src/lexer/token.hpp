@@ -90,6 +90,42 @@ struct Token {
   int line_num;         ///< Line number started
   int col_num;          ///< Column number started
 
+  Token()
+      : type(TokenType::INVALID),
+        invalid(InvalidType::NotInvalid),
+        lexeme(""),
+        line_num(0),
+        col_num(0) {}
+
+  Token(TokenType type)
+      : type(type),
+        invalid(InvalidType::NotInvalid),
+        lexeme(""),
+        line_num(0),
+        col_num(0) {}
+
+  Token(TokenType type, std::string lexeme)
+      : type(type),
+        invalid(InvalidType::NotInvalid),
+        lexeme(std::move(lexeme)),
+        line_num(0),
+        col_num(0) {}
+
+  Token(TokenType type, InvalidType invalid, std::string lexeme)
+      : type(type),
+        invalid(invalid),
+        lexeme(std::move(lexeme)),
+        line_num(0),
+        col_num(0) {}
+
+  Token(TokenType type, InvalidType invalid, std::string lexeme, int line,
+        int col)
+      : type(type),
+        invalid(invalid),
+        lexeme(std::move(lexeme)),
+        line_num(line),
+        col_num(col) {}
+
   /**
    * @brief Print token in format "type (lexeme)" or "type"
    *
