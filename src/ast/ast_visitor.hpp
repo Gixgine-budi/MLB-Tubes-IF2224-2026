@@ -5,6 +5,7 @@ namespace ast {
 class AstNode;
 
 // Forward declarations for concrete nodes
+
 class ProgramNode;
 class BlockNode;
 class VarDeclNode;
@@ -13,6 +14,7 @@ class ProcDeclNode;
 class FuncDeclNode;
 
 // Expressions
+
 class BinOpNode;
 class UnaryOpNode;
 class NumberNode;
@@ -23,6 +25,7 @@ class ArrayAccessNode;
 class RecordAccessNode;
 
 // Statements
+
 class AssignNode;
 class IfNode;
 class WhileNode;
@@ -31,6 +34,11 @@ class ForNode;
 class ProcCallNode;
 class CompoundStmtNode;
 
+/**
+ * @brief Visitor interface for AST traversal. Each visit method corresponds to
+ * a specific AST node type
+ *
+ */
 class ASTVisitor {
  public:
   virtual ~ASTVisitor() = default;

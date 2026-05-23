@@ -7,6 +7,11 @@
 
 namespace ast {
 
+/**
+ * @brief Base class for all AST nodes. Contains common properties and the
+ * accept method for the Visitor pattern.
+ *
+ */
 class AstNode {
  public:
   virtual ~AstNode() = default;
