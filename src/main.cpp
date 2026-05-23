@@ -13,8 +13,10 @@
 #include "io/char_machine.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
+#include "semantic/ast_printer.hpp"
+#include "semantic/semantic_analyzer.hpp"
 
-enum class RunMode { Lexer, Parser };
+enum class RunMode { Lexer, Parser, Semantic };
 
 namespace {
 
@@ -49,7 +51,7 @@ bool useASCII() {
 
 int main(int argc, char* argv[]) {
   std::string source_name;
-  RunMode mode = RunMode::Parser;
+  RunMode mode = RunMode::Semantic;
   bool dump = false;
 
   for (int i = 1; i < argc; ++i) {
@@ -59,6 +61,8 @@ int main(int argc, char* argv[]) {
         mode = RunMode::Lexer;
       } else if (arg == "--parser" || arg == "-p") {
         mode = RunMode::Parser;
+      } else if (arg == "--semantic" || arg == "-s") {
+        mode = RunMode::Semantic;
       } else if (arg == "--dump" || arg == "-d") {
         dump = true;
       } else {
@@ -126,20 +130,45 @@ int main(int argc, char* argv[]) {
       return 1;
     }
 
-    if (dump) {
-      parser.printParseTree(useASCII());
-    } else {
-      const std::string ptree_path = source_name + ".ptree";
-      std::ofstream ptree_file(ptree_path);
-      if (!ptree_file.is_open()) {
-        throw std::runtime_error("arion: error: cannot open output file '" +
-                                 ptree_path + "'");
+    if (mode == RunMode::Parser) {
+      if (dump) {
+        parser.printParseTree(useASCII());
+      } else {
+        const std::string ptree_path = source_name + ".ptree";
+        std::ofstream ptree_file(ptree_path);
+        if (!ptree_file.is_open()) {
+          throw std::runtime_error("arion: error: cannot open output file '" +
+                                   ptree_path + "'");
+        }
+        auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());
+        parser.printParseTree();
+        std::cout.rdbuf(saved_buf);
       }
-      auto* saved_buf = std::cout.rdbuf(ptree_file.rdbuf());
-      parser.printParseTree();
-      std::cout.rdbuf(saved_buf);
+
+      return 0;
     }
 
+    semantic::SemanticAnalyzer analyzer(parser.program(), diagnoser);
+    analyzer.analyze();
+
+    if (diagnoser.has_error()) {
+      std::cerr << diagnoser;
+      return 1;
+    }
+
+    if (dump) {
+      semantic::ASTPrinter printer(std::cout, useASCII());
+      printer.print(analyzer.getAst());
+    } else {
+      const std::string ast_path = source_name + ".ast";
+      std::ofstream ast_file(ast_path);
+      if (!ast_file.is_open()) {
+        throw std::runtime_error("arion: error: cannot open output file '" +
+                                 ast_path + "'");
+      }
+      semantic::ASTPrinter printer(ast_file, useASCII());
+      printer.print(analyzer.getAst());
+    }
     return 0;
 
   } catch (const std::exception& e) {

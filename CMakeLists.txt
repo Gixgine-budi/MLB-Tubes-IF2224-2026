@@ -36,11 +36,17 @@ add_library(
 
 add_library(
   arion_semantic
+  src/semantic/ast_printer.cpp
   src/semantic/sdt_builder.cpp
   src/semantic/sdt_type_spec.cpp
   src/semantic/sdt_declaration.cpp
   src/semantic/sdt_statement.cpp
   src/semantic/sdt_expression.cpp
+  src/semantic/symbol_table.cpp
+  src/semantic/semantic_analyzer.cpp
+  src/semantic/semantic_declaration.cpp
+  src/semantic/semantic_expression.cpp
+  src/semantic/semantic_statement.cpp
 )
 
 target_include_directories(arion_io PUBLIC src)

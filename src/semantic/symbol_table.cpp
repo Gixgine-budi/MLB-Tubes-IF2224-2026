@@ -26,17 +26,18 @@ SymbolTable::SymbolTable() {
   current_level = 0;
   last_idx = 0;
 
-  auto reserve_type = [this](const std::string& name, int type_code) {
+  auto reserve_type = [this](const std::string& name, BuiltinType type_code) {
+    const int code = static_cast<int>(type_code);
     TabEntry entry{};
     entry.idx = static_cast<int>(tab.size()) + kTabReservedCount;
     entry.id = name;
     entry.link = last_idx;
     entry.obj = ObjClass::Type;
-    entry.type = type_code;
+    entry.type = code;
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
-    entry.adr = type_code;
+    entry.adr = code;
     last_idx = entry.idx;
     tab.push_back(entry);
     btab[0].last = last_idx;
@@ -48,14 +49,14 @@ SymbolTable::SymbolTable() {
   reserve_type("char", BuiltinType::Char);
   reserve_type("string", BuiltinType::String);
 
-  auto reserve_const = [this](const std::string& name, int type_code,
+  auto reserve_const = [this](const std::string& name, BuiltinType type_code,
                               int value) {
     TabEntry entry{};
     entry.idx = static_cast<int>(tab.size()) + kTabReservedCount;
     entry.id = name;
     entry.link = last_idx;
     entry.obj = ObjClass::Constant;
-    entry.type = type_code;
+    entry.type = static_cast<int>(type_code);
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
