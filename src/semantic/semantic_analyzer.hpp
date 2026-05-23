@@ -62,6 +62,8 @@ class SemanticAnalyzer : public ast::ASTVisitor {
                               const std::string &context);
   void enterScope();
   void leaveScope();
+  int get_base_type(const std::string& type_name);
+  bool isAssignmentCompatible(int target_type, int expr_type);
 };
 
 }  // namespace semantic
