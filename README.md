@@ -38,6 +38,16 @@ Semantic adalah komponen ketiga yang melakukan analisis semantik pada parse tree
 - Membangun Symbol Table untuk menyimpan informasi tentang variabel, fungsi, dan tipe data
 - Melakukan type checking untuk memastikan konsistensi tipe data dalam operasi dan assignment
 
+### Intermediate Representation dan VM
+
+Setelah tahap semantic, program akan diubah menjadi Intermediate Representation (IR) yang lebih rendah levelnya, yang kemudian dapat dieksekusi oleh Virtual Machine (VM) yang diimplementasikan dengan instruction set kustom.
+
+**Metode Implementasi:**
+- Mengubah decorated AST menjadi IR yang lebih rendah levelnya
+- Menggunakan instruction set kustom untuk VM
+- Mengimplementasikan interpreter untuk mengeksekusi IR
+- Mengelola stack dan memory untuk eksekusi program
+
 ### Error Handling (Diagnoser)
 
 Diagnoser adalah komponen yang mendeteksi, mengklasifikasi, dan melaporkan berbagai kesalahan yang terjadi selama proses lexical analysis, parsing, dan semantic analysis.
@@ -76,6 +86,7 @@ cmake --build build
   - `--lexer`: Hanya menjalankan lexer dan menyimpan token yang dihasilkan ke file `.token`
   - `--parser`: Menjalankan lexer dan parser, menyimpan parse tree yang dihasilkan ke file `.ptree`
   - `--semantic`: Menjalankan lexer, parser, dan semantic analyzer, menyimpan decorated AST ke file `.ast` dan symbol table ke file `.sym`
+  - `--ir` : Menjalankan seluruh pipeline (lexer, parser, semantic) dan menghasilkan intermediate representation (IR) ke file `.ir`
   - `--dump`: Digunakan bersamaan dengan flag lain untuk mencetak hasil terakhir ke terminal
   - `--dump-all`: Mencetak hasil dari semua tahap (lexer, parser, semantic) ke terminal
 
@@ -111,6 +122,16 @@ cmake --build build
 | 13524011 | Muhammad Iqbal Raihan      | Semantic Analyzer dan SDT Builder |
 | 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan, SDT Builder |
 | 13524099 | Muhammad Akmal             | Implementasi AST Node dan Visitor Pattern, Printer, Symbol Table, Integrasi ke Main |
+
+### Milestone 4: Intermediate Representation dan VM
+
+|   NIM    |           Nama             |      Peran       |
+| -------- | -------------------------- | ---------------- |
+| 13524009 | Mikhael Benrael Tampubolon | Penulisan Laporan, IR Generator, Implementasi VM |
+| 13524011 | Muhammad Iqbal Raihan      | Penulisan Laporan, Interpreter dan Stack Machine |
+| 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan |
+| 13524099 | Muhammad Akmal             | Implementasi Instruction Set dan Integrasi ke Main |
+
 
 *IF2224 Teori Bahasa Formal dan Automata*  
 *Semester II Tahun Ajaran 2025/2026*
