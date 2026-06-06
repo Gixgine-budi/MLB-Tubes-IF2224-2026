@@ -1,0 +1,22 @@
+program StressTest;
+
+var
+    x, y, z : integer;
+
+begin
+    x := 5;
+    y := 2;
+
+    z := x * y + 10 div 2;
+
+    if z >= 15 then
+        z := z - 3
+    else
+        z := z + 3;
+
+    while z > 10 do
+    begin
+        writeln(z);
+        z := z - 2;
+    end;
+end.

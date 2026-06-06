@@ -112,7 +112,7 @@ int SymbolTable::enterTab(const std::string& id, ObjClass obj, int type,
   if (!block_stack.empty()) {
     int current_block_idx = block_stack.back();
     if (obj == ObjClass::Variable) {
-      new_entry.adr = btab[current_block_idx].vsze;
+      new_entry.adr = btab[current_block_idx].vsze + 3; 
       btab[current_block_idx].vsze += size;
     } else if (obj == ObjClass::Constant) {
       new_entry.adr = btab[current_block_idx].psze;

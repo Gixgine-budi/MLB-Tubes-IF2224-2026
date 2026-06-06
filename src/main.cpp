@@ -16,6 +16,8 @@
 #include "parser/parser.hpp"
 #include "semantic/ast_printer.hpp"
 #include "semantic/semantic_analyzer.hpp"
+#include "icg/code_generator.hpp"
+#include "interpreter/interpreter.hpp"
 
 enum class RunMode { Lexer, Parser, Semantic };
 
@@ -207,6 +209,18 @@ int main(int argc, char* argv[]) {
     semantic::SemanticAnalyzer analyzer(parser.program(), diagnoser);
     analyzer.analyze();
 
+    if (!diagnoser.has_error()) {
+      CodeGenerator icg(analyzer.getSymbolTable());
+      analyzer.getAst().accept(icg);
+      
+      std::cout << "\n=== INTERMEDIATE CODE ===\n";
+      icg.printCode();
+
+      std::cout << "\n=== EXECUTION OUTPUT ===\n";
+      Interpreter vm;
+      vm.execute(icg.getCode());
+    }
+    
     if (diagnoser.has_error()) {
       std::cerr << diagnoser;
       return 1;
@@ -277,3 +291,5 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 }
+
+
