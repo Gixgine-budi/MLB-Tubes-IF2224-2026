@@ -59,18 +59,30 @@ void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
 
 void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
   const int int_t = get_base_type("integer");
+  const int char_t = get_base_type("char"); 
+
   if (node.low != nullptr) node.low->accept(*this);
   if (node.high != nullptr) node.high->accept(*this);
 
-  if (node.low != nullptr && node.low->expression_type != int_t) {
-    reportError("subrange lower bound must be integer");
-  }
-  if (node.high != nullptr && node.high->expression_type != int_t) {
-    reportError("subrange upper bound must be integer");
+  int base_type = 0;
+
+  if (node.low != nullptr && node.high != nullptr) {
+    int low_type = node.low->expression_type;
+    int high_type = node.high->expression_type;
+
+    if (low_type != int_t && low_type != char_t) {
+      reportError("subrange lower bound must be integer or char");
+    } 
+    else if (high_type != low_type) {
+      reportError("subrange upper bound must match lower bound type");
+    } 
+    else {
+      base_type = low_type;
+    }
   }
 
   node.expression_type =
-      makeAnonymousType(static_cast<int>(BuiltinType::Subrange));
+      makeAnonymousType(static_cast<int>(BuiltinType::Subrange), base_type);
 }
 
 void SemanticAnalyzer::visit(ast::ArrayTypeSpecNode& node) {

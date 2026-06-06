@@ -48,10 +48,40 @@ int SemanticAnalyzer::get_base_type(const std::string& type_name) {
 
 bool SemanticAnalyzer::isAssignmentCompatible(int target_type, int expr_type) {
   if (target_type == expr_type) return true;
-  if (target_type == get_base_type("real") &&
-      expr_type == get_base_type("integer")) {
+
+  int actual_target = target_type;
+  while (actual_target >= RESERVED) {
+    const auto& t_entry = sym_table.getTabEntry(actual_target);
+    if (t_entry.type == static_cast<int>(BuiltinType::Subrange)) {
+      actual_target = t_entry.ref; // Found a subrange, extract base type
+      break;
+    } else if (t_entry.obj == ObjClass::Type && t_entry.type >= RESERVED && t_entry.type != actual_target) {
+      actual_target = t_entry.type; 
+    } else {
+      break; 
+    }
+  }
+
+  int actual_expr = expr_type;
+  while (actual_expr >= RESERVED) {
+    const auto& e_entry = sym_table.getTabEntry(actual_expr);
+    if (e_entry.type == static_cast<int>(BuiltinType::Subrange)) {
+      actual_expr = e_entry.ref; 
+      break;
+    } else if (e_entry.obj == ObjClass::Type && e_entry.type >= RESERVED && e_entry.type != actual_expr) {
+      actual_expr = e_entry.type; 
+    } else {
+      break; 
+    }
+  }
+
+  if (actual_target == actual_expr && actual_target != 0) return true;
+
+  if (actual_target == get_base_type("real") &&
+      actual_expr == get_base_type("integer")) {
     return true;
   }
+
   return false;
 }
 
