@@ -1,9 +1,25 @@
+#include <algorithm>
+
 #include "ast/expr_nodes.hpp"
 #include "ast/type_nodes.hpp"
 #include "semantic/semantic_analyzer.hpp"
 #include "semantic/symtable_entries.hpp"
 
 namespace semantic {
+
+namespace {
+
+int variableStackSize(const SymbolTable& sym_table, int type_tab_idx) {
+  const auto& type_entry = sym_table.getTabEntry(type_tab_idx);
+  if (type_entry.type == static_cast<int>(BuiltinType::Array) &&
+      type_entry.ref > 0) {
+    const auto& atab_entry = sym_table.getAtabEntry(type_entry.ref);
+    return std::max(1, atab_entry.size) * std::max(1, atab_entry.elsz);
+  }
+  return 1;
+}
+
+}  // namespace
 
 int SemanticAnalyzer::makeAnonymousType(int raw_type, int ref) {
   const std::string name =
@@ -226,7 +242,9 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
       continue;
     }
 
-    sym_table.enterTab(id.lexeme, ObjClass::Variable, var_type);
+    const int stack_size = variableStackSize(sym_table, var_type);
+    sym_table.enterTab(id.lexeme, ObjClass::Variable, var_type, 0, 1,
+                       stack_size);
   }
   // tab_index points to the first identifier registered for this declaration
   if (!node.identifiers.empty()) {

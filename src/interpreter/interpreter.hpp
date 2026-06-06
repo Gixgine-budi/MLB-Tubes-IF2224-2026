@@ -79,6 +79,17 @@ public:
                     pc = s[b + 2];   
                     b = s[b + 1];    
                     break;
+                case OpCode::LDX: {
+                    int rel = s[t--];
+                    s[++t] = s[getBase(i.l) + i.a + rel];
+                    break;
+                }
+                case OpCode::STX: {
+                    int val = s[t--];
+                    int rel = s[t--];
+                    s[getBase(i.l) + i.a + rel] = val;
+                    break;
+                }
             }
         } while (pc != 0);
     }

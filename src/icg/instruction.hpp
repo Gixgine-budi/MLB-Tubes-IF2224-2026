@@ -2,7 +2,9 @@
 #include <string>
 
 enum class OpCode {
-    LIT, LOD, STO, CAL, INT, JMP, JPC, OPR, RET
+    LIT, LOD, STO, CAL, INT, JMP, JPC, OPR, RET,
+    LDX,  // load array element: pop rel_index, push s[base + rel_index]
+    STX   // store array element: pop value, pop rel_index, s[base + rel_index] = value
 };
 
 struct Instruction {
@@ -21,6 +23,8 @@ struct Instruction {
             case OpCode::JPC: return "JPC";
             case OpCode::OPR: return "OPR";
             case OpCode::RET: return "RET";
+            case OpCode::LDX: return "LDX";
+            case OpCode::STX: return "STX";
             default: return "???";
         }
     }
