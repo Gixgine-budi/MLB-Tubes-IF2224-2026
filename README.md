@@ -112,7 +112,7 @@ cmake --build build
 | 13524025 | Moh Hafizh Irham Perdana   | Penulisan Laporan, SDT Builder |
 | 13524099 | Muhammad Akmal             | Implementasi AST Node dan Visitor Pattern, Printer, Symbol Table, Integrasi ke Main |
 
-*IF2224 Teori Bahasa Formal dan Automata*
+*IF2224 Teori Bahasa Formal dan Automata*  
 *Semester II Tahun Ajaran 2025/2026*
 
 **Program Studi Teknik Informatika**  

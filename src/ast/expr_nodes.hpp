@@ -7,11 +7,21 @@
 
 namespace ast {
 
+/**
+ * @brief Expression node base class
+ *
+ */
 class ExprNode : public AstNode {
  public:
   virtual ~ExprNode() = default;
 };
 
+/**
+ * @brief Binary operation node
+ *
+ * <expr> <binary op> <expr>
+ * <op> can be +, -, *, /, div, mod, and, or, ==, <>, <, <=, >, >=
+ */
 class BinOpNode : public ExprNode {
  public:
   std::unique_ptr<ExprNode> left;
@@ -25,6 +35,12 @@ class BinOpNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Unary operation node
+ *
+ * <op> <expr>
+ * <op> can be +, -, not
+ */
 class UnaryOpNode : public ExprNode {
  public:
   lexer::Token op;
@@ -36,6 +52,11 @@ class UnaryOpNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Number literal node
+ *
+ * <number> can be int or real literal
+ */
 class NumberNode : public ExprNode {
  public:
   lexer::Token val;
@@ -45,6 +66,11 @@ class NumberNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief String literal node
+ *
+ * <string>
+ */
 class StringNode : public ExprNode {
  public:
   lexer::Token val;
@@ -53,6 +79,11 @@ class StringNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Identifier node
+ *
+ * <ident> (case insensitive)
+ */
 class IdentNode : public ExprNode {
  public:
   lexer::Token id;
@@ -61,6 +92,11 @@ class IdentNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Function call node
+ *
+ * <identifier>(<expr list>)
+ */
 class FuncCallNode : public ExprNode {
  public:
   lexer::Token id;
@@ -71,6 +107,11 @@ class FuncCallNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Array access node
+ *
+ * <array expr> [<index expr list>]
+ */
 class ArrayAccessNode : public ExprNode {
  public:
   std::unique_ptr<ExprNode> array_expr;
@@ -82,6 +123,11 @@ class ArrayAccessNode : public ExprNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Record access node
+ *
+ * <record expr>.<field>
+ */
 class RecordAccessNode : public ExprNode {
  public:
   std::unique_ptr<ExprNode> record_expr;

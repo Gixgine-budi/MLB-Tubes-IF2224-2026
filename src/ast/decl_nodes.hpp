@@ -11,6 +11,11 @@
 
 namespace ast {
 
+/**
+ * @brief Constant declaration node
+ *
+ * const <identifier> = <expression>;
+ */
 class ConstDeclNode : public AstNode {
  public:
   lexer::Token identifier;
@@ -22,6 +27,11 @@ class ConstDeclNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Variable declaration node
+ *
+ * var <identifier list> : <type specifier>;
+ */
 class VarDeclNode : public AstNode {
  public:
   std::vector<lexer::Token> identifiers;
@@ -34,6 +44,11 @@ class VarDeclNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Type declaration node
+ *
+ * type <identifier> = <type specifier>;
+ */
 class TypeDeclNode : public AstNode {
  public:
   lexer::Token identifier;
@@ -45,7 +60,11 @@ class TypeDeclNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
-// Represents formal parameters like: v1, v2 : Integer; var v3 : Boolean
+/**
+ * @brief Parameter node for procedure/function declarations
+ *
+ * <var> <identifier list> : <type specifier>
+ */
 class ParameterNode : public AstNode {
  public:
   std::vector<lexer::Token> identifiers;
@@ -58,12 +77,21 @@ class ParameterNode : public AstNode {
         type_spec(std::move(t_spec)),
         is_var(var_param) {}
 
-  // Using a separate accept if it needs one, but usually visited through
-  // Proc/Func decl
-  void accept(ASTVisitor &) override { /* often handled by parent */
-  }
+  /**
+   * @brief Handled by ProcDeclNode and FuncDeclNode
+   *
+   */
+  void accept(ASTVisitor &) override {}
 };
 
+/**
+ * @brief Block node
+ *
+ * begin
+ *   <declarations>
+ *   <compound statement>
+ * end;
+ */
 class BlockNode : public AstNode {
  public:
   std::vector<std::unique_ptr<AstNode>>
@@ -77,6 +105,12 @@ class BlockNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Procedure declaration node
+ *
+ * procedure <identifier> (<formal parameters>);
+ *   <block>
+ */
 class ProcDeclNode : public AstNode {
  public:
   lexer::Token identifier;
@@ -91,6 +125,12 @@ class ProcDeclNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Function declaration node
+ *
+ * function <identifier> (<formal parameters>) : <return type>;
+ *   <block>
+ */
 class FuncDeclNode : public AstNode {
  public:
   lexer::Token identifier;
@@ -110,6 +150,12 @@ class FuncDeclNode : public AstNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Program node
+ *
+ * program <identifier> (<program parameters>);
+ *   <block>
+ */
 class ProgramNode : public AstNode {
  public:
   lexer::Token identifier;

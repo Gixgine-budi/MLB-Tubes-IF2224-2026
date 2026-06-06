@@ -12,61 +12,65 @@ namespace lexer {
  *
  */
 enum class TokenType {
-  INVALID,
-  INTCON,
-  REALCON,
-  CHARCON,
-  STRING,
-  NOTSY,
-  PLUS,
-  MINUS,
-  TIMES,
-  IDIV,
-  RDIV,
-  IMOD,
-  ANDSY,
-  ORSY,
-  EQL,
-  NEQ,
-  GTR,
-  GEQ,
-  LSS,
-  LEQ,
-  LPARENT,
-  RPARENT,
-  LBRACK,
-  RBRACK,
-  COMMA,
-  SEMICOLON,
-  PERIOD,
-  COLON,
-  BECOMES,
-  CONSTSY,
-  TYPESY,
-  VARSY,
-  FUNCTIONSY,
-  PROCEDURESY,
-  ARRAYSY,
-  RECORDSY,
-  PROGRAMSY,
-  IDENT,
-  BEGINSY,
-  IFSY,
-  CASESY,
-  REPEATSY,
-  WHILESY,
-  FORSY,
-  ENDSY,
-  ELSESY,
-  UNTILSY,
-  OFSY,
-  DOSY,
-  TOSY,
-  DOWNTOSY,
-  THENSY,
-  COMMENT
+  INVALID,      // invalid/unknown type
+  INTCON,       // integer literal, e.g. 123
+  REALCON,      // real literal, e.g. 3.14
+  CHARCON,      // character literal, e.g. 'a' or '''
+  STRING,       // string literal, e.g. 'hello' or 'it''s me'
+  NOTSY,        // not
+  PLUS,         // +
+  MINUS,        // -
+  TIMES,        // *
+  IDIV,         // div
+  RDIV,         // /
+  IMOD,         // mod
+  ANDSY,        // and
+  ORSY,         // or
+  EQL,          // ==
+  NEQ,          // <>
+  GTR,          // >
+  GEQ,          // >=
+  LSS,          // <
+  LEQ,          // <=
+  LPARENT,      // (
+  RPARENT,      // )
+  LBRACK,       // [
+  RBRACK,       // ]
+  COMMA,        // ,
+  SEMICOLON,    // ;
+  PERIOD,       // .
+  COLON,        // :
+  BECOMES,      // :=
+  CONSTSY,      // const
+  TYPESY,       // type
+  VARSY,        // var
+  FUNCTIONSY,   // function
+  PROCEDURESY,  // procedure
+  ARRAYSY,      // array
+  RECORDSY,     // record
+  PROGRAMSY,    // program
+  IDENT,        // a case insensitive identifier, e.g. x or thisIsAValidIdent
+  BEGINSY,      // begin
+  IFSY,         // if
+  CASESY,       // case
+  REPEATSY,     // repeat
+  WHILESY,      // while
+  FORSY,        // for
+  ENDSY,        // end
+  ELSESY,       // else
+  UNTILSY,      // until
+  OFSY,         // of
+  DOSY,         // do
+  TOSY,         // to
+  DOWNTOSY,     // downto
+  THENSY,       // then
+  COMMENT       // a comment, e.g. { comment } or (* comment *)
 };
 
+/**
+ * @brief Enum representing the type of invalid token, used for error reporting
+ *
+ */
 enum class InvalidType : int {
   NotInvalid = 0,
   IllegalSymbol,

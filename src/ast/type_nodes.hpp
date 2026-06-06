@@ -8,11 +8,20 @@
 
 namespace ast {
 
+/**
+ * @brief Type specification node base class
+ *
+ */
 class TypeSpecNode : public AstNode {
  public:
   virtual ~TypeSpecNode() = default;
 };
 
+/**
+ * @brief Simple type specification
+ *
+ * <identifier>
+ */
 class SimpleTypeSpecNode : public TypeSpecNode {
  public:
   lexer::Token name;
@@ -22,6 +31,11 @@ class SimpleTypeSpecNode : public TypeSpecNode {
   void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Subrange type specification
+ *
+ * <low>..<high>
+ */
 class SubrangeTypeSpecNode : public TypeSpecNode {
  public:
   std::unique_ptr<AstNode> low;
@@ -33,6 +47,11 @@ class SubrangeTypeSpecNode : public TypeSpecNode {
   void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Array type specification
+ *
+ * array [<index type>] of <element type>
+ */
 class ArrayTypeSpecNode : public TypeSpecNode {
  public:
   std::unique_ptr<TypeSpecNode> index_type;
@@ -45,6 +64,12 @@ class ArrayTypeSpecNode : public TypeSpecNode {
   void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Record type specification
+ *
+ * <field declarations> e.g. <identifier list> : <type specifier>;
+ *
+ */
 class RecordTypeSpecNode : public TypeSpecNode {
  public:
   std::vector<
@@ -60,6 +85,11 @@ class RecordTypeSpecNode : public TypeSpecNode {
   void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Enumeration type specification
+ *
+ * (literal1, literal2, ...);
+ */
 class EnumTypeSpecNode : public TypeSpecNode {
  public:
   std::vector<lexer::Token> literals;

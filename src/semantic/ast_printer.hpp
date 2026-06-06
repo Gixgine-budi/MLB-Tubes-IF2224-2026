@@ -108,7 +108,6 @@ class ASTPrinter : public ast::ASTVisitor {
    */
   void visitChild(ast::AstNode &child, bool is_last);
 
-  // Helper: visit a list of children.
   /**
    * @brief Helper: visit a list of children.
    *

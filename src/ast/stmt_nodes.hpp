@@ -8,11 +8,20 @@
 
 namespace ast {
 
+/**
+ * @brief Statement node base class
+ *
+ */
 class StmtNode : public AstNode {
  public:
   virtual ~StmtNode() = default;
 };
 
+/**
+ * @brief Assignment statement node
+ *
+ * <variable> := <expression>;
+ */
 class AssignNode : public StmtNode {
  public:
   std::unique_ptr<ExprNode> target;
@@ -23,6 +32,15 @@ class AssignNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief If statement node
+ *
+ *
+ * if <condition> then
+ *   <then_branch>
+ * else
+ *   <else_branch>
+ */
 class IfNode : public StmtNode {
  public:
   std::unique_ptr<ExprNode> condition;
@@ -37,6 +55,12 @@ class IfNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief While statement node
+ *
+ * while <condition> do
+ *   <body>
+ */
 class WhileNode : public StmtNode {
  public:
   std::unique_ptr<ExprNode> condition;
@@ -47,6 +71,13 @@ class WhileNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Repeat statement node
+ *
+ * repeat
+ *   <statements>
+ * until <condition>;
+ */
 class RepeatNode : public StmtNode {
  public:
   std::vector<std::unique_ptr<StmtNode>> statements;
@@ -58,6 +89,12 @@ class RepeatNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief For statement node
+ *
+ * for <identifier> := <initial> to/downto <final> do
+ *   <body>
+ */
 class ForNode : public StmtNode {
  public:
   lexer::Token iterator;
@@ -76,6 +113,11 @@ class ForNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Procedure call statement node
+ *
+ * <procedure_name>(<arguments>);
+ */
 class ProcCallNode : public StmtNode {
  public:
   lexer::Token id;
@@ -86,6 +128,13 @@ class ProcCallNode : public StmtNode {
   void accept(ASTVisitor &visitor) override { visitor.visit(*this); }
 };
 
+/**
+ * @brief Compound statement node
+ *
+ * begin
+ *   <statements>
+ * end
+ */
 class CompoundStmtNode : public StmtNode {
  public:
   std::vector<std::unique_ptr<StmtNode>> statements;

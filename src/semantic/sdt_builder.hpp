@@ -211,6 +211,14 @@ class SDTBuilder {
   Ptr<ast::AssignNode> buildAssign(const parser::ParseNode &node);
 
   /**
+   * @brief Build variable access chain (identifier, indexing, field access).
+   *
+   * @param node Parse node of type NodeType::Variable.
+   * @return Expression node representing full l-value/r-value access path.
+   */
+  Ptr<ast::ExprNode> buildVariableAccess(const parser::ParseNode &node);
+
+  /**
    * @brief Build if/then[/else] statement AST node.
    *
    * @param node Parse node of type NodeType::IfStatement.
@@ -302,14 +310,6 @@ class SDTBuilder {
    * @return Atomic expression AST node.
    */
   Ptr<ast::ExprNode> buildFactor(const parser::ParseNode &node);
-
-  /**
-   * @brief Build variable access chain (identifier, indexing, field access).
-   *
-   * @param node Parse node of type NodeType::Variable.
-   * @return Expression node representing full l-value/r-value access path.
-   */
-  Ptr<ast::ExprNode> buildVariableAccess(const parser::ParseNode &node);
 };
 
 }  // namespace semantic
