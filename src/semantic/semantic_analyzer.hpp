@@ -110,6 +110,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    */
   void reportError(const std::string &message,
                    const lexer::Token *token = nullptr);
+  const lexer::Token *sourceToken(const ast::AstNode &node) const;
 
   /**
    * @brief Resolve the type specification and return its corresponding type ID.
@@ -127,7 +128,8 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @return int Type ID corresponding to the resolved type, or -1 if resolution
    * fails.
    */
-  int resolveSimpleTypeName(const std::string &name);
+  int resolveSimpleTypeName(const std::string &name,
+                            const lexer::Token *token = nullptr);
 
   /**
    * @brief Enter a new scope level in the symbol table.
@@ -169,7 +171,8 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   bool isRelationalCompatible(int lhs_type, int rhs_type) const;
   std::optional<ConstantValue> constantValue(const ast::AstNode &node) const;
   bool checkSubrangeValue(int target_type, int value,
-                          const std::string &context);
+                          const std::string &context,
+                          const lexer::Token *token = nullptr);
   void checkSubrangeAssignment(int target_type, const ast::AstNode &expr,
                                const std::string &context);
 

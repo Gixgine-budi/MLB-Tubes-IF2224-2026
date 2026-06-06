@@ -5,7 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "ast/decl_nodes.hpp"
 #include "ast/expr_nodes.hpp"
+#include "ast/stmt_nodes.hpp"
+#include "ast/type_nodes.hpp"
 #include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "semantic/symtable_entries.hpp"
@@ -40,6 +43,107 @@ void SemanticAnalyzer::reportError(const std::string& message,
   diagnoser_.report(
       {diag::Phase::SEMANTIC, diag::Level::ERROR, source, message, ""});
   has_errors_ = true;
+}
+
+const lexer::Token* SemanticAnalyzer::sourceToken(
+    const ast::AstNode& node) const {
+  if (node.token.has_value()) {
+    return &*node.token;
+  }
+
+  if (const auto* n = dynamic_cast<const ast::ProgramNode*>(&node)) {
+    return &n->identifier;
+  }
+  if (const auto* n = dynamic_cast<const ast::ConstDeclNode*>(&node)) {
+    return &n->identifier;
+  }
+  if (const auto* n = dynamic_cast<const ast::VarDeclNode*>(&node)) {
+    return n->identifiers.empty() ? nullptr : &n->identifiers.front();
+  }
+  if (const auto* n = dynamic_cast<const ast::TypeDeclNode*>(&node)) {
+    return &n->identifier;
+  }
+  if (const auto* n = dynamic_cast<const ast::ProcDeclNode*>(&node)) {
+    return &n->identifier;
+  }
+  if (const auto* n = dynamic_cast<const ast::FuncDeclNode*>(&node)) {
+    return &n->identifier;
+  }
+  if (const auto* n = dynamic_cast<const ast::ParameterNode*>(&node)) {
+    return n->identifiers.empty() ? nullptr : &n->identifiers.front();
+  }
+  if (const auto* n = dynamic_cast<const ast::SimpleTypeSpecNode*>(&node)) {
+    return &n->name;
+  }
+  if (const auto* n = dynamic_cast<const ast::SubrangeTypeSpecNode*>(&node)) {
+    if (n->low != nullptr) return sourceToken(*n->low);
+    if (n->high != nullptr) return sourceToken(*n->high);
+    return nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::ArrayTypeSpecNode*>(&node)) {
+    if (n->index_type != nullptr) return sourceToken(*n->index_type);
+    if (n->element_type != nullptr) return sourceToken(*n->element_type);
+    return nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::RecordTypeSpecNode*>(&node)) {
+    for (const auto& field : n->fields) {
+      if (!field.first.empty()) return &field.first.front();
+    }
+    return nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::EnumTypeSpecNode*>(&node)) {
+    return n->literals.empty() ? nullptr : &n->literals.front();
+  }
+  if (const auto* n = dynamic_cast<const ast::BinOpNode*>(&node)) {
+    return &n->op;
+  }
+  if (const auto* n = dynamic_cast<const ast::UnaryOpNode*>(&node)) {
+    return &n->op;
+  }
+  if (const auto* n = dynamic_cast<const ast::NumberNode*>(&node)) {
+    return &n->val;
+  }
+  if (const auto* n = dynamic_cast<const ast::StringNode*>(&node)) {
+    return &n->val;
+  }
+  if (const auto* n = dynamic_cast<const ast::IdentNode*>(&node)) {
+    return &n->id;
+  }
+  if (const auto* n = dynamic_cast<const ast::FuncCallNode*>(&node)) {
+    return &n->id;
+  }
+  if (const auto* n = dynamic_cast<const ast::ArrayAccessNode*>(&node)) {
+    if (!n->indices.empty() && n->indices.front() != nullptr) {
+      return sourceToken(*n->indices.front());
+    }
+    if (n->array_expr != nullptr) return sourceToken(*n->array_expr);
+    return nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::RecordAccessNode*>(&node)) {
+    return &n->field;
+  }
+  if (const auto* n = dynamic_cast<const ast::AssignNode*>(&node)) {
+    if (n->target != nullptr) return sourceToken(*n->target);
+    if (n->expr != nullptr) return sourceToken(*n->expr);
+    return nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::IfNode*>(&node)) {
+    return n->condition != nullptr ? sourceToken(*n->condition) : nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::WhileNode*>(&node)) {
+    return n->condition != nullptr ? sourceToken(*n->condition) : nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::RepeatNode*>(&node)) {
+    return n->condition != nullptr ? sourceToken(*n->condition) : nullptr;
+  }
+  if (const auto* n = dynamic_cast<const ast::ForNode*>(&node)) {
+    return &n->iterator;
+  }
+  if (const auto* n = dynamic_cast<const ast::ProcCallNode*>(&node)) {
+    return &n->id;
+  }
+
+  return nullptr;
 }
 
 void SemanticAnalyzer::enterScope() { sym_table.pushBlock(); }
@@ -161,14 +265,15 @@ std::optional<SemanticAnalyzer::ConstantValue> SemanticAnalyzer::constantValue(
 }
 
 bool SemanticAnalyzer::checkSubrangeValue(int target_type, int value,
-                                          const std::string& context) {
+                                          const std::string& context,
+                                          const lexer::Token* token) {
   const int target = canonicalType(target_type);
   if (!isSubrangeType(target)) return true;
 
   const auto& type_entry = sym_table.getTabEntry(target);
   const auto& bounds = sym_table.getAtabEntry(type_entry.ref);
   if (value < bounds.low || value > bounds.high) {
-    reportError(context + " is outside subrange bounds");
+    reportError(context + " is outside subrange bounds", token);
     return false;
   }
   return true;
@@ -180,7 +285,7 @@ void SemanticAnalyzer::checkSubrangeAssignment(int target_type,
   if (!isSubrangeType(target_type)) return;
   auto value = constantValue(expr);
   if (value) {
-    checkSubrangeValue(target_type, value->value, context);
+    checkSubrangeValue(target_type, value->value, context, sourceToken(expr));
   }
 }
 

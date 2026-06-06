@@ -38,7 +38,8 @@ int SemanticAnalyzer::constIntValue(const ast::AstNode* node,
   return fallback;
 }
 
-int SemanticAnalyzer::resolveSimpleTypeName(const std::string& name) {
+int SemanticAnalyzer::resolveSimpleTypeName(const std::string& name,
+                                            const lexer::Token* token) {
   if (auto entry = sym_table.lookup(name)) {
     if (entry->obj == ObjClass::Type) {
       if (entry->ref > 0) {
@@ -50,7 +51,7 @@ int SemanticAnalyzer::resolveSimpleTypeName(const std::string& name) {
       return entry->idx;
     }
   }
-  reportError("unknown type '" + name + "'");
+  reportError("unknown type '" + name + "'", token);
   return 0;
 }
 
@@ -60,7 +61,7 @@ int SemanticAnalyzer::resolveTypeSpec(ast::TypeSpecNode& spec) {
 }
 
 void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
-  node.expression_type = resolveSimpleTypeName(node.name.lexeme);
+  node.expression_type = resolveSimpleTypeName(node.name.lexeme, &node.name);
 }
 
 void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
@@ -80,17 +81,21 @@ void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
     const auto high_const = constantValue(*node.high);
 
     if (!isOrdinalLike(low_type)) {
-      reportError("subrange lower bound must be an ordinal type");
+      reportError("subrange lower bound must be an ordinal type",
+                  sourceToken(*node.low));
     } else if (low_base != high_base) {
-      reportError("subrange upper bound must match lower bound type");
+      reportError("subrange upper bound must match lower bound type",
+                  sourceToken(*node.high));
     } else if (!low_const || !high_const) {
-      reportError("subrange bounds must be constant values");
+      reportError("subrange bounds must be constant values",
+                  sourceToken(!low_const ? *node.low : *node.high));
     } else {
       base_type = low_base;
       low_value = low_const->value;
       high_value = high_const->value;
       if (low_value > high_value) {
-        reportError("subrange lower bound must not exceed upper bound");
+        reportError("subrange lower bound must not exceed upper bound",
+                    sourceToken(*node.low));
       }
     }
   }
@@ -149,7 +154,7 @@ void SemanticAnalyzer::visit(ast::RecordTypeSpecNode& node) {
 
     for (const auto& id : field.first) {
       if (sym_table.lookupCurrentScope(id.lexeme)) {
-        reportError("record field '" + id.lexeme + "' already declared");
+        reportError("record field '" + id.lexeme + "' already declared", &id);
         continue;
       }
       const int stack_size = variableStackSize(sym_table, field_type);
@@ -170,7 +175,7 @@ void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
   int enum_value = 0;
   for (const auto& lit : node.literals) {
     if (sym_table.lookupCurrentScope(lit.lexeme)) {
-      reportError("identifier '" + lit.lexeme + "' already declared");
+      reportError("identifier '" + lit.lexeme + "' already declared", &lit);
       continue;
     }
     const int idx = sym_table.enterTab(lit.lexeme, ObjClass::Constant,
@@ -183,7 +188,8 @@ void SemanticAnalyzer::visit(ast::EnumTypeSpecNode& node) {
 void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
   if (node.value == nullptr) {
     reportError("invalid constant definition for '" + node.identifier.lexeme +
-                "'");
+                    "'",
+                &node.identifier);
     return;
   }
 
@@ -192,7 +198,8 @@ void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
   const auto const_value = constantValue(*node.value);
 
   if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
-    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    reportError("identifier '" + node.identifier.lexeme + "' already declared",
+                &node.identifier);
     return;
   }
 
@@ -208,7 +215,8 @@ void SemanticAnalyzer::visit(ast::ProgramNode& node) {
   if (auto existing = sym_table.lookup(node.identifier.lexeme)) {
     if (existing->obj != ObjClass::Type) {
       reportError("program name conflicts with existing identifier '" +
-                  node.identifier.lexeme + "'");
+                      node.identifier.lexeme + "'",
+                  &node.identifier);
     }
   } else {
     sym_table.enterTab(node.identifier.lexeme, ObjClass::Type,
@@ -242,7 +250,8 @@ void SemanticAnalyzer::visit(ast::BlockNode& node) {
 void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
   auto* spec = dynamic_cast<ast::TypeSpecNode*>(node.type_spec.get());
   if (spec == nullptr) {
-    reportError("invalid type specification in variable declaration");
+    reportError("invalid type specification in variable declaration",
+                sourceToken(node));
     return;
   }
 
@@ -251,7 +260,7 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
 
   for (const auto& id : node.identifiers) {
     if (sym_table.lookupCurrentScope(id.lexeme)) {
-      reportError("identifier '" + id.lexeme + "' already declared");
+      reportError("identifier '" + id.lexeme + "' already declared", &id);
       continue;
     }
 
@@ -270,13 +279,15 @@ void SemanticAnalyzer::visit(ast::VarDeclNode& node) {
 void SemanticAnalyzer::visit(ast::TypeDeclNode& node) {
   auto* spec = dynamic_cast<ast::TypeSpecNode*>(node.type_def.get());
   if (spec == nullptr) {
-    reportError("invalid type definition for '" + node.identifier.lexeme + "'");
+    reportError("invalid type definition for '" + node.identifier.lexeme + "'",
+                &node.identifier);
     return;
   }
 
   const int type_code = resolveTypeSpec(*spec);
   if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
-    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    reportError("identifier '" + node.identifier.lexeme + "' already declared",
+                &node.identifier);
     return;
   }
 
@@ -292,7 +303,8 @@ void SemanticAnalyzer::visit(ast::TypeDeclNode& node) {
 
 void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
   if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
-    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    reportError("identifier '" + node.identifier.lexeme + "' already declared",
+                &node.identifier);
     return;
   }
   node.tab_index =
@@ -306,7 +318,7 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
     const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
       if (sym_table.lookupCurrentScope(id.lexeme)) {
-        reportError("identifier '" + id.lexeme + "' already declared");
+        reportError("identifier '" + id.lexeme + "' already declared", &id);
         continue;
       }
       const int stack_size = variableStackSize(sym_table, param_type);
@@ -331,7 +343,8 @@ void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
   const int return_type = ret_spec != nullptr ? resolveTypeSpec(*ret_spec) : 0;
 
   if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
-    reportError("identifier '" + node.identifier.lexeme + "' already declared");
+    reportError("identifier '" + node.identifier.lexeme + "' already declared",
+                &node.identifier);
     return;
   }
   node.tab_index = sym_table.enterTab(node.identifier.lexeme,
@@ -345,7 +358,7 @@ void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
     const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
     for (const auto& id : param->identifiers) {
       if (sym_table.lookupCurrentScope(id.lexeme)) {
-        reportError("identifier '" + id.lexeme + "' already declared");
+        reportError("identifier '" + id.lexeme + "' already declared", &id);
         continue;
       }
       const int stack_size = variableStackSize(sym_table, param_type);
