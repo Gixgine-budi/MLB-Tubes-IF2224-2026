@@ -124,6 +124,9 @@ ParsePtr Parser::parseConstant() {
            "expected a constant, found " + formatToken(current()),
            ""});
       node->addChild(std::make_unique<ParseNode>(NodeType::Error));
+      if (!is_done()) {
+        position_++;
+      }
       break;
   }
 

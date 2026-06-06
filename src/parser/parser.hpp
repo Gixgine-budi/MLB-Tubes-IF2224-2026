@@ -53,6 +53,7 @@ class Parser {
   size_t position_ = 0;                      //< Current pointer position
   ParseNode program_;                        //< Parse tree root
   diag::Diagnoser& diagnoser_;               //< Diagnostic accumulator
+  mutable bool eof_reported_ = false;         //< Prevent repeated EOF errors
 
   /**
    * @brief Checks if last token has consumed
@@ -98,6 +99,18 @@ class Parser {
    *               is NOT consumed)
    */
   void sync(std::initializer_list<lexer::TokenType> stops);
+
+  /**
+   * @brief Ensure a recovery/parser step consumed at least one token.
+   *
+   * Some malformed-but-lexically-valid token streams can make recursive
+   * descent functions return without advancing. This helper prevents caller
+   * loops from spinning forever by reporting the stuck token and consuming it.
+   *
+   * @param previous_position Position before the parser step.
+   * @param context Human-readable parser context for the diagnostic.
+   */
+  void ensureProgress(size_t previous_position, const std::string& context);
 
   /**
    * @brief Helper function to format a token for error messages to symbol/type

@@ -87,6 +87,9 @@ ParsePtr Parser::parseFactor() {
              formatToken(current()),
          ""});
     node->addChild(std::make_unique<ParseNode>(NodeType::Error));
+    if (!is_done()) {
+      position_++;
+    }
   }
   return node;
 }

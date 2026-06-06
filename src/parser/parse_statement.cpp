@@ -49,9 +49,11 @@ ParsePtr Parser::parseCompoundStatement() {
 
 ParsePtr Parser::parseStatementList() {
   auto node = std::make_unique<ParseNode>(NodeType::StatementList);
-  while (current().type != TokenType::ENDSY &&
+  while (!is_done() && current().type != TokenType::ENDSY &&
          current().type != TokenType::UNTILSY) {
+    const auto previous_position = position_;
     node->addChild(parseStatement());
+    ensureProgress(previous_position, "statement list");
     if (current().type == TokenType::SEMICOLON) {
       node->addChild(consume(TokenType::SEMICOLON));
       continue;
@@ -67,7 +69,9 @@ ParsePtr Parser::parseStatementList() {
           static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
          "expected ';' between statements, found " + formatToken(current()),
          "add ';' before the next statement"});
+    const auto sync_position = position_;
     sync({TokenType::SEMICOLON, TokenType::ENDSY, TokenType::UNTILSY});
+    ensureProgress(sync_position, "statement-list recovery");
   }
   return node;
 }
@@ -94,6 +98,7 @@ ParsePtr Parser::parseStatement() {
       if (!is_done() && peek(1).type == TokenType::LPARENT) {
         node->addChild(parseFunctionCall());
       } else {
+        const auto previous_position = position_;
         ParsePtr var = parseVariable();
         if (current().type == TokenType::BECOMES) {
           auto asn = std::make_unique<ParseNode>(NodeType::AssignmentStatement);
@@ -110,6 +115,7 @@ ParsePtr Parser::parseStatement() {
                "expected ':=' after variable, found " + formatToken(current()),
                ""});
           node->addChild(std::move(var));
+          ensureProgress(previous_position, "assignment statement");
         }
       }
       break;
@@ -127,7 +133,9 @@ ParsePtr Parser::parseStatement() {
             static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
            "expected a statement, found " + formatToken(current()),
            ""});
+      const auto previous_position = position_;
       sync({TokenType::SEMICOLON, TokenType::ENDSY});
+      ensureProgress(previous_position, "statement recovery");
       break;
   }
   return node;
@@ -142,6 +150,9 @@ ParsePtr Parser::parseVariable() {
           static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
          "expected an identifier, found " + formatToken(current()),
          ""});
+    if (!is_done()) {
+      position_++;
+    }
     return std::make_unique<ParseNode>(NodeType::Error);
   }
   auto node = std::make_unique<ParseNode>(NodeType::Variable);
@@ -186,7 +197,9 @@ ParsePtr Parser::parseIndexList() {
           static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
          "expected an array index, found " + formatToken(current()),
          ""});
+    const auto previous_position = position_;
     sync({TokenType::RBRACK, TokenType::SEMICOLON});
+    ensureProgress(previous_position, "array index recovery");
     return node;
   }
   {
@@ -203,7 +216,9 @@ ParsePtr Parser::parseIndexList() {
             static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
            "expected an array index after ',', found " + formatToken(current()),
            ""});
+      const auto previous_position = position_;
       sync({TokenType::RBRACK, TokenType::SEMICOLON});
+      ensureProgress(previous_position, "array index recovery");
       return node;
     }
     const TokenType ty = current().type;
@@ -286,7 +301,9 @@ ParsePtr Parser::parseCaseBlock() {
       break;
     }
     if (case_label_starts_here(current())) {
+      const auto previous_position = position_;
       node->addChild(parseCaseBlock());
+      ensureProgress(previous_position, "case block");
     } else {
       break;
     }
@@ -331,7 +348,9 @@ ParsePtr Parser::parseForStatement() {
          "expected 'to' or 'downto' in for loop, found " +
              formatToken(current()),
          ""});
+    const auto previous_position = position_;
     sync({TokenType::DOSY, TokenType::SEMICOLON, TokenType::ENDSY});
+    ensureProgress(previous_position, "for-loop recovery");
   }
   node->addChild(parseExpression());
   node->addChild(consume(TokenType::DOSY, "after loop bound"));
@@ -355,7 +374,9 @@ ParsePtr Parser::parseParameterList() {
   node->addChild(parseExpression());
   while (current().type == TokenType::COMMA) {
     node->addChild(consume(TokenType::COMMA));
+    const auto previous_position = position_;
     node->addChild(parseExpression());
+    ensureProgress(previous_position, "parameter list");
   }
   return node;
 }

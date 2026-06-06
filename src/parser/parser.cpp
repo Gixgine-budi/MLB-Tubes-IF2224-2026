@@ -27,11 +27,14 @@ bool Parser::is_done() const { return position_ >= tokens_.size(); }
 
 const lexer::Token& Parser::current() const {
   if (position_ >= tokens_.size()) {
-    diagnoser_.report({diag::Phase::PARSER,
-                       diag::Level::ERROR,
-                       {0, 1, 1},
-                       "unexpected end of file",
-                       "the program may be missing 'end' or '.'"});
+    if (!eof_reported_) {
+      diagnoser_.report({diag::Phase::PARSER,
+                         diag::Level::ERROR,
+                         {0, 1, 1},
+                         "unexpected end of file",
+                         "the program may be missing 'end' or '.'"});
+      eof_reported_ = true;
+    }
     return eof_sentinel;
   }
   return tokens_.at(position_);
@@ -97,6 +100,23 @@ void Parser::sync(std::initializer_list<lexer::TokenType> stops) {
     }
     position_++;
   }
+}
+
+void Parser::ensureProgress(size_t previous_position,
+                            const std::string& context) {
+  if (position_ != previous_position || is_done()) {
+    return;
+  }
+
+  diagnoser_.report(
+      {diag::Phase::PARSER,
+       diag::Level::ERROR,
+       {current().line_num, current().col_num,
+        static_cast<int>(std::max(size_t{1}, current().lexeme.size()))},
+       "parser could not recover while parsing " + context + " near " +
+           formatToken(current()),
+       "skipping this token to continue parsing"});
+  position_++;
 }
 
 }  // namespace parser

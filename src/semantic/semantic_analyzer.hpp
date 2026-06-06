@@ -110,6 +110,13 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    */
   void reportError(const std::string &message,
                    const lexer::Token *token = nullptr);
+
+  /**
+   * @brief Get the source token associated with an AST node for error report
+   *
+   * @param node the AST node to get the source token from
+   * @return const lexer::Token* pointer to the source token, or nullptr
+   */
   const lexer::Token *sourceToken(const ast::AstNode &node) const;
 
   /**
