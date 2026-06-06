@@ -4,7 +4,7 @@
 
 ## Tentang Program
 
-Arion Interpreter adalah sebuah proyek yang bertujuan untuk mengembangkan sebuah interpreter sederhana untuk bahasa pemrograman sendiri bernama Arion. Proyek ini mencakup implementasi lexer, parser, dan diagnoser untuk bahasa tersebut, serta integrasi ke dalam sebuah executable yang dapat dijalankan dari command line.
+Arion Interpreter adalah sebuah proyek yang bertujuan untuk mengembangkan sebuah interpreter sederhana untuk bahasa pemrograman sendiri bernama Arion. Proyek ini mencakup implementasi lexer, parser, semantic analyzer,  diagnoser, intermediate code generation, dan virtual machine untuk mengeksekusi source code bahasa tersebut.
 
 ### Lexer
 
