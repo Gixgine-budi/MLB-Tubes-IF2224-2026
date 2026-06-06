@@ -24,24 +24,23 @@ SymbolTable::SymbolTable() {
   btab.push_back(BtabEntry{0, 0, 0, 0, 0});
   atab.push_back(AtabEntry{0, 0, 0, 0, 0, 0, 0, 0});
   block_stack.push_back(0);
+  display.push_back(0);
   current_level = 0;
-  last_idx = 0;
 
   auto reserve_type = [this](const std::string& name, BuiltinType type_code) {
     const int code = static_cast<int>(type_code);
     TabEntry entry{};
     entry.idx = static_cast<int>(tab.size()) + RESERVED;
     entry.id = name;
-    entry.link = last_idx;
+    entry.link = btab[0].last;
     entry.obj = ObjClass::Type;
     entry.type = entry.idx;
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
     entry.adr = code;
-    last_idx = entry.idx;
+    btab[0].last = entry.idx;
     tab.push_back(entry);
-    btab[0].last = last_idx;
   };
 
   reserve_type("integer", BuiltinType::Integer);
@@ -55,26 +54,45 @@ SymbolTable::SymbolTable() {
     TabEntry entry{};
     entry.idx = static_cast<int>(tab.size()) + RESERVED;
     entry.id = name;
-    entry.link = last_idx;
+    entry.link = btab[0].last;
     entry.obj = ObjClass::Constant;
     entry.type = RESERVED + static_cast<int>(type_code) - 1;
     entry.ref = 0;
     entry.nrm = 1;
     entry.lev = 0;
     entry.adr = value;
-    last_idx = entry.idx;
+    btab[0].last = entry.idx;
     tab.push_back(entry);
-    btab[0].last = last_idx;
   };
 
   reserve_const("true", BuiltinType::Boolean, 1);
   reserve_const("false", BuiltinType::Boolean, 0);
+
+  auto reserve_proc = [this](const std::string& name) {
+    TabEntry entry{};
+    entry.idx = static_cast<int>(tab.size()) + RESERVED;
+    entry.id = name;
+    entry.link = btab[0].last;
+    entry.obj = ObjClass::Procedure;
+    entry.type = 0;
+    entry.ref = 0;
+    entry.nrm = 1;
+    entry.lev = 0;
+    entry.adr = 0;
+    btab[0].last = entry.idx;
+    tab.push_back(entry);
+  };
+
+  reserve_proc("writeln");
+  reserve_proc("write");
+  reserve_proc("readln");
+  reserve_proc("read");
 }
 
 int SymbolTable::pushBlock() {
   BtabEntry new_block{};
   new_block.idx = static_cast<int>(btab.size());
-  new_block.last = last_idx;
+  new_block.last = 0;
   new_block.lpar = 0;
   new_block.psze = 0;
   new_block.vsze = 0;
@@ -82,6 +100,13 @@ int SymbolTable::pushBlock() {
   btab.push_back(new_block);
   block_stack.push_back(new_block.idx);
   current_level++;
+
+  if (static_cast<int>(display.size()) <= current_level) {
+    display.push_back(new_block.idx);
+  } else {
+    display[current_level] = new_block.idx;
+  }
+
   return new_block.idx;
 }
 
@@ -90,51 +115,79 @@ void SymbolTable::popBlock() {
     return;
   }
 
-  current_level--;
   block_stack.pop_back();
-  const int parent_block_idx = block_stack.back();
-  last_idx = btab[parent_block_idx].last;
+  current_level--;
+}
+
+int SymbolTable::appendTabEntry(TabEntry entry, int block_idx, bool is_param) {
+  entry.idx = static_cast<int>(tab.size()) + RESERVED;
+  entry.lev = current_level;
+
+  if (is_param) {
+    entry.link = btab[block_idx].lpar;
+    entry.adr = btab[block_idx].psze + 3;
+    btab[block_idx].lpar = entry.idx;
+  } else if (entry.obj == ObjClass::Variable) {
+    entry.link = btab[block_idx].last;
+    entry.adr = btab[block_idx].vsze + 3;
+    btab[block_idx].last = entry.idx;
+  } else if (entry.obj == ObjClass::Constant) {
+    entry.link = btab[block_idx].last;
+    entry.adr = btab[block_idx].psze;
+    btab[block_idx].psze += 1;
+    btab[block_idx].last = entry.idx;
+  } else {
+    entry.link = btab[block_idx].last;
+    btab[block_idx].last = entry.idx;
+  }
+
+  tab.push_back(entry);
+  return entry.idx;
 }
 
 int SymbolTable::enterTab(const std::string& id, ObjClass obj, int type,
                           int ref, int nrm, int size) {
   TabEntry new_entry{};
-  new_entry.idx = static_cast<int>(tab.size()) + RESERVED;
   new_entry.id = id;
-  new_entry.link = last_idx;
   new_entry.obj = obj;
   new_entry.type = type;
   new_entry.ref = ref;
   new_entry.nrm = nrm;
-  new_entry.lev = current_level;
   new_entry.adr = 0;
 
-  if (!block_stack.empty()) {
-    int current_block_idx = block_stack.back();
-    if (obj == ObjClass::Variable) {
-      new_entry.adr = btab[current_block_idx].vsze + 3; 
-      btab[current_block_idx].vsze += size;
-    } else if (obj == ObjClass::Constant) {
-      new_entry.adr = btab[current_block_idx].psze;
-      btab[current_block_idx].psze += size;
-    }
-    btab[current_block_idx].last = new_entry.idx;
+  const int block_idx = block_stack.back();
+  const int idx = appendTabEntry(new_entry, block_idx, false);
+
+  if (obj == ObjClass::Variable) {
+    btab[block_idx].vsze += size;
   }
 
-  last_idx = new_entry.idx;
-  tab.push_back(new_entry);
-  return new_entry.idx;
+  return idx;
+}
+
+int SymbolTable::enterParam(const std::string& id, int type, int nrm,
+                            int size) {
+  TabEntry new_entry{};
+  new_entry.id = id;
+  new_entry.obj = ObjClass::Variable;
+  new_entry.type = type;
+  new_entry.ref = 0;
+  new_entry.nrm = nrm;
+  new_entry.adr = 0;
+
+  const int block_idx = block_stack.back();
+  const int idx = appendTabEntry(new_entry, block_idx, true);
+  btab[block_idx].psze += size;
+  return idx;
 }
 
 int SymbolTable::enterTab(const TabEntry entry) {
   TabEntry copy = entry;
-  copy.idx = static_cast<int>(tab.size()) + RESERVED;
-  copy.link = last_idx;
+  const int block_idx = block_stack.back();
+  copy.link = btab[block_idx].last;
   copy.lev = current_level;
-  last_idx = copy.idx;
-  if (!block_stack.empty()) {
-    btab[block_stack.back()].last = last_idx;
-  }
+  copy.idx = static_cast<int>(tab.size()) + RESERVED;
+  btab[block_idx].last = copy.idx;
   tab.push_back(copy);
   return copy.idx;
 }
@@ -153,11 +206,13 @@ int SymbolTable::enterTab(const BtabEntry entry) {
   return copy.idx;
 }
 
-std::optional<TabEntry> SymbolTable::lookup(const std::string& id) const {
-  const std::string key = lexer::Alphabet::to_lower(id);
-  int current_link = last_idx;
+namespace {
+
+std::optional<TabEntry> lookupChain(const SymbolTable& table,
+                                    const std::string& key, int start_link) {
+  int current_link = start_link;
   while (current_link >= RESERVED) {
-    const auto& entry = getTabEntry(current_link);
+    const auto& entry = table.getTabEntry(current_link);
     if (lexer::Alphabet::to_lower(entry.id) == key) {
       return entry;
     }
@@ -166,21 +221,38 @@ std::optional<TabEntry> SymbolTable::lookup(const std::string& id) const {
   return std::nullopt;
 }
 
+}  // namespace
+
+std::optional<TabEntry> SymbolTable::lookup(const std::string& id) const {
+  const std::string key = lexer::Alphabet::to_lower(id);
+
+  for (int lev = current_level; lev >= 0; --lev) {
+    if (lev >= static_cast<int>(display.size())) {
+      continue;
+    }
+    const auto& block = btab[display[lev]];
+    if (auto found = lookupChain(*this, key, block.last)) {
+      return found;
+    }
+    if (auto found = lookupChain(*this, key, block.lpar)) {
+      return found;
+    }
+  }
+
+  return std::nullopt;
+}
+
 std::optional<TabEntry> SymbolTable::lookupCurrentScope(
     const std::string& id) const {
   const std::string key = lexer::Alphabet::to_lower(id);
-  int current_link = last_idx;
+  const int block_idx = block_stack.back();
+  const auto& block = btab[block_idx];
 
-  while (current_link >= RESERVED) {
-    const auto& entry = getTabEntry(current_link);
-    if (entry.lev < current_level) {
-      break;
-    }
-    if (entry.lev == current_level &&
-        lexer::Alphabet::to_lower(entry.id) == key) {
-      return entry;
-    }
-    current_link = entry.link;
+  if (auto found = lookupChain(*this, key, block.last)) {
+    return found;
+  }
+  if (auto found = lookupChain(*this, key, block.lpar)) {
+    return found;
   }
 
   return std::nullopt;

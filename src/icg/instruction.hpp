@@ -3,14 +3,15 @@
 
 enum class OpCode {
     LIT, LOD, STO, CAL, INT, JMP, JPC, OPR, RET,
-    LDX,  // load array element: pop rel_index, push s[base + rel_index]
-    STX   // store array element: pop value, pop rel_index, s[base + rel_index] = value
+    LDX,
+    STX
 };
 
 struct Instruction {
     OpCode op;
-    int l; // Lexical Level difference
-    int a; // Address / Value / Operation ID
+    int l;
+    int a;
+    int aux;
 
     std::string getOpString() const {
         switch (op) {

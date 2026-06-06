@@ -49,8 +49,8 @@ void SemanticAnalyzer::visit(ast::ForNode& node) {
   auto entry = sym_table.lookup(node.iterator.lexeme);
   if (!entry) {
     reportError("undeclared iterator variable '" + node.iterator.lexeme + "'");
-  } else if (entry->type != get_base_type("integer")) {
-    reportError("for-loop iterator must be integer");
+  } else if (!isAssignmentCompatible(entry->type, get_base_type("integer"))) {
+    reportError("for-loop iterator must be integer or compatible subrange");
   }
 
   node.initial->accept(*this);
@@ -71,16 +71,23 @@ void SemanticAnalyzer::visit(ast::ForNode& node) {
 void SemanticAnalyzer::visit(ast::ProcCallNode& node) {
   auto entry = sym_table.lookup(node.id.lexeme);
   if (!entry) {
-    // Tolerate known built-in procedures not yet in symbol table
-    const std::string& name = node.id.lexeme;
-    if (name != "writeln" && name != "readln" && name != "write" &&
-        name != "read") {
-      reportError("undeclared procedure '" + name + "'");
-    }
+    reportError("undeclared procedure '" + node.id.lexeme + "'");
   } else if (entry->obj != ObjClass::Procedure) {
     reportError("'" + node.id.lexeme + "' is not a procedure");
   } else {
     node.tab_index = entry->idx;
+    const std::string& name = node.id.lexeme;
+    const bool predefined_io =
+        name == "writeln" || name == "write" || name == "readln" ||
+        name == "read";
+    if (!predefined_io) {
+      const int expected = countFormalParams(entry->idx);
+      if (static_cast<int>(node.args.size()) != expected) {
+        reportError("procedure '" + name + "' expects " +
+                    std::to_string(expected) + " argument(s), got " +
+                    std::to_string(node.args.size()));
+      }
+    }
   }
 
   for (auto& arg : node.args) {

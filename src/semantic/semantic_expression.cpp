@@ -117,6 +117,12 @@ void SemanticAnalyzer::visit(ast::FuncCallNode& node) {
   } else {
     node.expression_type = entry->type;
     node.tab_index = entry->idx;
+    const int expected = countFormalParams(entry->idx);
+    if (static_cast<int>(node.args.size()) != expected) {
+      reportError("function '" + node.id.lexeme + "' expects " +
+                  std::to_string(expected) + " argument(s), got " +
+                  std::to_string(node.args.size()));
+    }
   }
 
   for (auto& arg : node.args) {
@@ -161,6 +167,7 @@ void SemanticAnalyzer::visit(ast::RecordAccessNode& node) {
         const auto& field_entry = sym_table.getTabEntry(current_link);
         if (field_entry.id == node.field.lexeme) {
           node.expression_type = field_entry.type;
+          node.tab_index = field_entry.idx;
           return;
         }
         current_link = field_entry.link;
