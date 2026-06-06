@@ -3,7 +3,7 @@ type
   Color == (red, green, blue);
   Shape == (circle, square);
 var
-  c: Shape;
+  c: Color;
 begin
   c := circle;
 end.
