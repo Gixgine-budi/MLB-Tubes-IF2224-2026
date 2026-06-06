@@ -1,5 +1,8 @@
 #include "semantic/semantic_analyzer.hpp"
 
+#include <algorithm>
+#include <vector>
+
 #include "diagnoser/diagnostic.hpp"
 #include "lexer/token.hpp"
 #include "semantic/symtable_entries.hpp"
@@ -83,6 +86,43 @@ bool SemanticAnalyzer::isAssignmentCompatible(int target_type, int expr_type) {
   }
 
   return false;
+}
+
+void SemanticAnalyzer::finalizeParamAddresses(int block_idx) {
+  const auto& block = sym_table.getBtabEntry(block_idx);
+  std::vector<int> param_indices;
+  int link = block.lpar;
+  while (link >= RESERVED) {
+    param_indices.push_back(link);
+    link = sym_table.getTabEntry(link).link;
+  }
+  if (param_indices.empty()) {
+    return;
+  }
+
+  std::reverse(param_indices.begin(), param_indices.end());
+  const int argc = static_cast<int>(param_indices.size());
+  for (int i = 0; i < argc; ++i) {
+    auto& entry = sym_table.getTabEntry(param_indices[static_cast<std::size_t>(i)]);
+    entry.adr = -argc + i;
+  }
+}
+
+int SemanticAnalyzer::countFormalParams(int proc_or_func_idx) const {
+  if (proc_or_func_idx < RESERVED) {
+    return 0;
+  }
+  const auto& entry = sym_table.getTabEntry(proc_or_func_idx);
+  if (entry.ref <= 0) {
+    return 0;
+  }
+  int count = 0;
+  int link = sym_table.getBtabEntry(entry.ref).lpar;
+  while (link >= RESERVED) {
+    ++count;
+    link = sym_table.getTabEntry(link).link;
+  }
+  return count;
 }
 
 }  // namespace semantic

@@ -209,16 +209,18 @@ int main(int argc, char* argv[]) {
     semantic::SemanticAnalyzer analyzer(parser.program(), diagnoser);
     analyzer.analyze();
 
-    if (!diagnoser.has_error()) {
+    if (!diagnoser.has_error() && !dump && !dump_all) {
       CodeGenerator icg(analyzer.getSymbolTable());
       analyzer.getAst().accept(icg);
-      
+
       std::cout << "\n=== INTERMEDIATE CODE ===\n";
       icg.printCode();
 
       std::cout << "\n=== EXECUTION OUTPUT ===\n";
       Interpreter vm;
-      vm.execute(icg.getCode());
+      if (!vm.execute(icg.getCode())) {
+        return 1;
+      }
     }
     
     if (diagnoser.has_error()) {

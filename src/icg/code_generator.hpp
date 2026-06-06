@@ -7,21 +7,29 @@
 #include "instruction.hpp"
 #include <vector>
 #include <iostream>
+#include <string>
 
 class CodeGenerator : public ast::ASTVisitor {
 private:
     std::vector<Instruction> code;
-    const semantic::SymbolTable& sym_table;
+    semantic::SymbolTable& sym_table;
     int current_level;
 
-    int emit(OpCode op, int l, int a) {
-        code.push_back({op, l, a});
-        return code.size() - 1; 
+    int emit(OpCode op, int l, int a, int aux = 0) {
+        code.push_back({op, l, a, aux});
+        return static_cast<int>(code.size()) - 1;
     }
 
-    // Push relative array index (index - low) onto the stack.
+    int mainFrameSize() const {
+        int size = sym_table.getBtabEntry(0).vsze;
+        if (sym_table.currentLevel() >= 1) {
+            size += sym_table.getBtabEntry(1).vsze;
+        }
+        return 3 + size;
+    }
+
     bool emitArrayRelativeIndex(ast::ArrayAccessNode& node, int& level_diff,
-                                int& base_adr) {
+                                int& base_adr, int& array_size) {
         auto* ident = dynamic_cast<ast::IdentNode*>(node.array_expr.get());
         if (ident == nullptr || ident->tab_index == 0 || node.indices.empty()) {
             return false;
@@ -37,22 +45,37 @@ private:
         const auto& atab_entry = sym_table.getAtabEntry(type_entry.ref);
         level_diff = current_level - var_entry.lev;
         base_adr = var_entry.adr;
+        array_size = std::max(1, atab_entry.size);
 
         node.indices[0]->accept(*this);
         emit(OpCode::LIT, 0, atab_entry.low);
-        emit(OpCode::OPR, 0, 3);  // SUB: index - low
+        emit(OpCode::OPR, 0, 3);
         return true;
     }
 
+    void emitProcOrFuncBody(ast::BlockNode* block, int block_ref) {
+        const auto& block_info = sym_table.getBtabEntry(block_ref);
+        emit(OpCode::INT, 0, 3 + block_info.vsze);
+        if (block != nullptr) {
+            block->accept(*this);
+        }
+        emit(OpCode::RET, 0, 0);
+    }
+
 public:
-    CodeGenerator(const semantic::SymbolTable& st) : sym_table(st), current_level(0) {}
+    CodeGenerator(semantic::SymbolTable& st)
+        : sym_table(st), current_level(0) {}
 
     const std::vector<Instruction>& getCode() const { return code; }
 
     void printCode() const {
         for (size_t i = 0; i < code.size(); ++i) {
-            std::cout << i << " " << code[i].getOpString() << " " 
-                      << code[i].l << " " << code[i].a << "\n";
+            std::cout << i << " " << code[i].getOpString() << " "
+                      << code[i].l << " " << code[i].a;
+            if (code[i].aux != 0) {
+                std::cout << " " << code[i].aux;
+            }
+            std::cout << "\n";
         }
     }
 
@@ -65,10 +88,9 @@ public:
             }
         }
 
-        code[jmp_main].a = code.size(); // Backpatch JMP ke awal eksekusi utama
-
-        int main_vsze = sym_table.getBtabEntry(0).vsze; 
-        emit(OpCode::INT, 0, 3 + main_vsze);
+        code[jmp_main].a = static_cast<int>(code.size());
+        current_level = 1;
+        emit(OpCode::INT, 0, mainFrameSize());
 
         if (node.block && node.block->compound_stmt) {
             node.block->compound_stmt->accept(*this);
@@ -96,12 +118,25 @@ public:
         if (auto* arr = dynamic_cast<ast::ArrayAccessNode*>(node.target.get())) {
             int level_diff = 0;
             int base_adr = 0;
-            if (!emitArrayRelativeIndex(*arr, level_diff, base_adr)) {
+            int array_size = 0;
+            if (!emitArrayRelativeIndex(*arr, level_diff, base_adr, array_size)) {
                 return;
             }
             node.expr->accept(*this);
-            emit(OpCode::STX, level_diff, base_adr);
+            emit(OpCode::STX, level_diff, base_adr, array_size);
             return;
+        }
+
+        if (auto* rec = dynamic_cast<ast::RecordAccessNode*>(node.target.get())) {
+            auto* ident = dynamic_cast<ast::IdentNode*>(rec->record_expr.get());
+            if (ident != nullptr && ident->tab_index != 0 && rec->tab_index != 0) {
+                node.expr->accept(*this);
+                const auto& base = sym_table.getTabEntry(ident->tab_index);
+                const auto& field = sym_table.getTabEntry(rec->tab_index);
+                int level_diff = current_level - base.lev;
+                emit(OpCode::STO, level_diff, base.adr + field.adr);
+                return;
+            }
         }
 
         node.expr->accept(*this);
@@ -112,53 +147,102 @@ public:
         }
         const auto& entry = sym_table.getTabEntry(ident->tab_index);
         int level_diff = current_level - entry.lev;
-        emit(OpCode::STO, level_diff, entry.adr);
+        int target_adr = entry.adr;
+        if (entry.obj == semantic::ObjClass::Function && entry.ref > 0) {
+            const auto& block = sym_table.getBtabEntry(entry.ref);
+            target_adr = 3 + block.vsze;
+            if (current_level == entry.lev + 1) {
+                level_diff = 0;
+            }
+        }
+        emit(OpCode::STO, level_diff, target_adr);
     }
 
     void visit(ast::IfNode& node) override {
         node.condition->accept(*this);
-        
-        int jpc_idx = emit(OpCode::JPC, 0, 0); // Kondisi salah melompat
-        
+
+        int jpc_idx = emit(OpCode::JPC, 0, 0);
+
         node.then_branch->accept(*this);
 
         if (node.else_branch) {
-            int jmp_idx = emit(OpCode::JMP, 0, 0); // Lewati Else
-            code[jpc_idx].a = code.size();         // Backpatch JPC ke Else
+            int jmp_idx = emit(OpCode::JMP, 0, 0);
+            code[jpc_idx].a = static_cast<int>(code.size());
             node.else_branch->accept(*this);
-            code[jmp_idx].a = code.size();         // Backpatch JMP ke End
+            code[jmp_idx].a = static_cast<int>(code.size());
         } else {
-            code[jpc_idx].a = code.size();         // Backpatch JPC ke End
+            code[jpc_idx].a = static_cast<int>(code.size());
         }
     }
 
     void visit(ast::WhileNode& node) override {
-        int start_idx = code.size(); 
-        
+        int start_idx = static_cast<int>(code.size());
+
         node.condition->accept(*this);
-        int jpc_idx = emit(OpCode::JPC, 0, 0); 
-        
+        int jpc_idx = emit(OpCode::JPC, 0, 0);
+
         node.body->accept(*this);
-        
-        emit(OpCode::JMP, 0, start_idx); // Loop ulang
-        code[jpc_idx].a = code.size();   
+
+        emit(OpCode::JMP, 0, start_idx);
+        code[jpc_idx].a = static_cast<int>(code.size());
+    }
+
+    void visit(ast::RepeatNode& node) override {
+        int loop_start = static_cast<int>(code.size());
+        for (auto& stmt : node.statements) {
+            stmt->accept(*this);
+        }
+        node.condition->accept(*this);
+        emit(OpCode::JPC, 0, loop_start);
+    }
+
+    void visit(ast::ForNode& node) override {
+        auto iter = sym_table.lookup(node.iterator.lexeme);
+        if (!iter) {
+            return;
+        }
+
+        node.initial->accept(*this);
+        int level_diff = current_level - iter->lev;
+        emit(OpCode::STO, level_diff, iter->adr);
+
+        int loop_start = static_cast<int>(code.size());
+        emit(OpCode::LOD, level_diff, iter->adr);
+        node.final->accept(*this);
+        emit(OpCode::OPR, 0, node.is_downto ? 10 : 12);
+
+        int jpc_exit = emit(OpCode::JPC, 0, 0);
+
+        node.body->accept(*this);
+
+        emit(OpCode::LOD, level_diff, iter->adr);
+        emit(OpCode::LIT, 0, 1);
+        emit(OpCode::OPR, 0, node.is_downto ? 3 : 2);
+        emit(OpCode::STO, level_diff, iter->adr);
+
+        emit(OpCode::JMP, 0, loop_start);
+        code[jpc_exit].a = static_cast<int>(code.size());
     }
 
     void visit(ast::ProcCallNode& node) override {
         if (node.id.lexeme == "writeln" || node.id.lexeme == "write") {
             for (auto& arg : node.args) {
                 arg->accept(*this);
-                emit(OpCode::OPR, 0, 13); // WRT (Output)
+                emit(OpCode::OPR, 0, 13);
             }
             if (node.id.lexeme == "writeln") {
-                emit(OpCode::OPR, 0, 14); // WRTLN (Newline)
+                emit(OpCode::OPR, 0, 14);
             }
+            return;
+        }
+
+        if (node.tab_index == 0) {
             return;
         }
 
         const auto& entry = sym_table.getTabEntry(node.tab_index);
         for (auto& arg : node.args) {
-            arg->accept(*this); // Push argumen
+            arg->accept(*this);
         }
         int level_diff = current_level - entry.lev;
         emit(OpCode::CAL, level_diff, entry.adr);
@@ -181,12 +265,19 @@ public:
         else if (node.op.type == TokenType::GEQ) opr_code = 10;
         else if (node.op.type == TokenType::GTR) opr_code = 11;
         else if (node.op.type == TokenType::LEQ) opr_code = 12;
+        else if (node.op.type == TokenType::ANDSY) opr_code = 16;
+        else if (node.op.type == TokenType::ORSY) opr_code = 17;
 
         emit(OpCode::OPR, 0, opr_code);
     }
 
     void visit(ast::NumberNode& node) override {
-        int value = std::stoi(node.val.lexeme);
+        int value = 0;
+        try {
+            value = std::stoi(node.val.lexeme);
+        } catch (...) {
+            value = static_cast<int>(std::stod(node.val.lexeme));
+        }
         emit(OpCode::LIT, 0, value);
     }
 
@@ -199,27 +290,95 @@ public:
     void visit(ast::ConstDeclNode&) override {}
     void visit(ast::VarDeclNode&) override {}
     void visit(ast::TypeDeclNode&) override {}
-    void visit(ast::ProcDeclNode&) override {}
-    void visit(ast::FuncDeclNode&) override {}
+
+    void visit(ast::ProcDeclNode& node) override {
+        auto& entry = sym_table.getTabEntry(node.tab_index);
+        entry.adr = static_cast<int>(code.size());
+
+        int saved_level = current_level;
+        current_level = entry.lev + 1;
+
+        if (entry.ref > 0) {
+            emitProcOrFuncBody(node.block.get(), entry.ref);
+        }
+
+        current_level = saved_level;
+    }
+
+    void visit(ast::FuncDeclNode& node) override {
+        auto& entry = sym_table.getTabEntry(node.tab_index);
+        entry.adr = static_cast<int>(code.size());
+
+        int saved_level = current_level;
+        current_level = entry.lev + 1;
+
+        if (entry.ref > 0) {
+            const auto& block_info = sym_table.getBtabEntry(entry.ref);
+            emit(OpCode::INT, 0, 3 + block_info.vsze);
+            if (node.block != nullptr) {
+                node.block->accept(*this);
+            }
+            emit(OpCode::LOD, 0, 3 + block_info.vsze);
+            emit(OpCode::RET, 0, 0);
+        }
+
+        current_level = saved_level;
+    }
+
     void visit(ast::UnaryOpNode& node) override {
         node.expr->accept(*this);
         if (node.op.type == lexer::TokenType::MINUS) {
-            emit(OpCode::OPR, 0, 1);  // NEG
+            emit(OpCode::OPR, 0, 1);
+        } else if (node.op.type == lexer::TokenType::NOTSY) {
+            emit(OpCode::OPR, 0, 15);
         }
     }
-    void visit(ast::StringNode&) override {}
-    void visit(ast::FuncCallNode&) override {}
+
+    void visit(ast::StringNode& node) override {
+        const std::string& lex = node.val.lexeme;
+        if (lex.size() >= 3 && lex.front() == '\'' && lex.back() == '\'') {
+            emit(OpCode::LIT, 0, static_cast<int>(lex[1]));
+        } else if (lex.size() >= 2 && lex.front() == '"' && lex.back() == '"') {
+            for (size_t i = 1; i + 1 < lex.size(); ++i) {
+                emit(OpCode::LIT, 0, static_cast<int>(lex[i]));
+            }
+        } else {
+            emit(OpCode::LIT, 0, 0);
+        }
+    }
+
+    void visit(ast::FuncCallNode& node) override {
+        if (node.tab_index == 0) {
+            return;
+        }
+        for (auto& arg : node.args) {
+            arg->accept(*this);
+        }
+        const auto& entry = sym_table.getTabEntry(node.tab_index);
+        int level_diff = current_level - entry.lev;
+        emit(OpCode::CAL, level_diff, entry.adr);
+    }
+
     void visit(ast::ArrayAccessNode& node) override {
         int level_diff = 0;
         int base_adr = 0;
-        if (!emitArrayRelativeIndex(node, level_diff, base_adr)) {
+        int array_size = 0;
+        if (!emitArrayRelativeIndex(node, level_diff, base_adr, array_size)) {
             return;
         }
-        emit(OpCode::LDX, level_diff, base_adr);
+        emit(OpCode::LDX, level_diff, base_adr, array_size);
     }
-    void visit(ast::RecordAccessNode&) override {}
-    void visit(ast::RepeatNode&) override {}
-    void visit(ast::ForNode&) override {}
+
+    void visit(ast::RecordAccessNode& node) override {
+        auto* ident = dynamic_cast<ast::IdentNode*>(node.record_expr.get());
+        if (ident == nullptr || ident->tab_index == 0 || node.tab_index == 0) {
+            return;
+        }
+        const auto& base = sym_table.getTabEntry(ident->tab_index);
+        const auto& field = sym_table.getTabEntry(node.tab_index);
+        int level_diff = current_level - base.lev;
+        emit(OpCode::LOD, level_diff, base.adr + field.adr);
+    }
 
     void visit(ast::SimpleTypeSpecNode&) override {}
     void visit(ast::SubrangeTypeSpecNode&) override {}

@@ -176,9 +176,9 @@ Ptr<ast::ExprNode> SDTBuilder::buildFactor(const parser::ParseNode &node) {
   } else if (child.type() == parser::NodeType::FunctionCall) {
     auto id_tok = child.children()[0]->token().value();
     std::vector<Ptr<ast::ExprNode>> args;
-    if (child.children().size() > 1 &&
-        child.children()[1]->type() == parser::NodeType::ParameterList) {
-      const auto &param_list = child.children()[1];
+    if (child.children().size() > 2 &&
+        child.children()[2]->type() == parser::NodeType::ParameterList) {
+      const auto &param_list = child.children()[2];
       for (const auto &p : param_list->children()) {
         if (p->type() == parser::NodeType::Expression) {
           args.push_back(buildExpression(*p));

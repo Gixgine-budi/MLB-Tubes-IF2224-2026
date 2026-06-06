@@ -145,7 +145,9 @@ void SemanticAnalyzer::visit(ast::RecordTypeSpecNode& node) {
         reportError("record field '" + id.lexeme + "' already declared");
         continue;
       }
-      sym_table.enterTab(id.lexeme, ObjClass::Variable, field_type);
+      const int stack_size = variableStackSize(sym_table, field_type);
+      sym_table.enterTab(id.lexeme, ObjClass::Variable, field_type, 0, 1,
+                         stack_size);
     }
   }
 
@@ -286,6 +288,8 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
       sym_table.enterTab(node.identifier.lexeme, ObjClass::Procedure, 0);
 
   enterScope();
+  sym_table.getTabEntry(node.tab_index).ref = sym_table.currentBlockIdx();
+
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
     const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
@@ -294,10 +298,12 @@ void SemanticAnalyzer::visit(ast::ProcDeclNode& node) {
         reportError("identifier '" + id.lexeme + "' already declared");
         continue;
       }
-      sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
-                         param->is_var ? 0 : 1);
+      const int stack_size = variableStackSize(sym_table, param_type);
+      sym_table.enterParam(id.lexeme, param_type, param->is_var ? 0 : 1,
+                           stack_size);
     }
   }
+  finalizeParamAddresses(sym_table.currentBlockIdx());
   if (node.block != nullptr) {
     for (const auto& decl : node.block->declarations) {
       decl->accept(*this);
@@ -321,6 +327,8 @@ void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
                                       ObjClass::Function, return_type);
 
   enterScope();
+  sym_table.getTabEntry(node.tab_index).ref = sym_table.currentBlockIdx();
+
   for (const auto& param : node.parameters) {
     auto* spec = dynamic_cast<ast::TypeSpecNode*>(param->type_spec.get());
     const int param_type = spec != nullptr ? resolveTypeSpec(*spec) : 0;
@@ -329,10 +337,12 @@ void SemanticAnalyzer::visit(ast::FuncDeclNode& node) {
         reportError("identifier '" + id.lexeme + "' already declared");
         continue;
       }
-      sym_table.enterTab(id.lexeme, ObjClass::Variable, param_type, 0,
-                         param->is_var ? 0 : 1);
+      const int stack_size = variableStackSize(sym_table, param_type);
+      sym_table.enterParam(id.lexeme, param_type, param->is_var ? 0 : 1,
+                           stack_size);
     }
   }
+  finalizeParamAddresses(sym_table.currentBlockIdx());
   if (node.block != nullptr) {
     for (const auto& decl : node.block->declarations) {
       decl->accept(*this);

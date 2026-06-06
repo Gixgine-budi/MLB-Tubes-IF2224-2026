@@ -51,6 +51,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @return const SymbolTable&
    */
   const SymbolTable &getSymbolTable() const { return sym_table; }
+  SymbolTable &getSymbolTable() { return sym_table; }
 
   // --- Visitor Overrides ---
 
@@ -162,6 +163,10 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @brief Best-effort extraction of integer value from a constant AST node.
    */
   int constIntValue(const ast::AstNode *node, int fallback = 0) const;
+
+  int countFormalParams(int proc_or_func_idx) const;
+
+  void finalizeParamAddresses(int block_idx);
 };
 
 }  // namespace semantic
