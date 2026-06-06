@@ -49,17 +49,23 @@ add_library(
   src/semantic/semantic_statement.cpp
 )
 
-target_include_directories(arion_io PUBLIC src)
-target_include_directories(arion_diag PUBLIC src)
-target_include_directories(arion_lexer PUBLIC src)
-target_include_directories(arion_parser PUBLIC src)
-target_include_directories(arion_semantic PUBLIC src)
+add_library(
+  arion_ir
+  src/ir/code_generator.cpp
+)
+
+add_library(
+  arion_vm
+  src/vm/interpreter.cpp
+)
 
 target_include_directories(arion_io PUBLIC src)
 target_include_directories(arion_diag PUBLIC src)
 target_include_directories(arion_lexer PUBLIC src)
 target_include_directories(arion_parser PUBLIC src)
 target_include_directories(arion_semantic PUBLIC src)
+target_include_directories(arion_ir PUBLIC src)
+target_include_directories(arion_vm PUBLIC src)
 
 target_link_libraries(arion_lexer PUBLIC arion_diag)
 
@@ -70,7 +76,9 @@ target_link_libraries(arion_lexer PUBLIC arion_diag)
 target_link_libraries(arion_parser PUBLIC arion_lexer)
 target_link_libraries(arion_parser PUBLIC arion_diag)
 target_link_libraries(arion_semantic PUBLIC arion_parser)
-target_link_libraries(arion PRIVATE arion_semantic)
+target_link_libraries(arion_ir PUBLIC arion_semantic)
+target_link_libraries(arion_vm PUBLIC arion_ir)
+target_link_libraries(arion PRIVATE arion_semantic arion_ir arion_vm)
 
 if(MSVC)
   target_compile_options(arion PRIVATE /W4)

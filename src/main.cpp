@@ -12,12 +12,12 @@
 #include "diagnoser/color.hpp"
 #include "diagnoser/diagnoser.hpp"
 #include "io/char_machine.hpp"
+#include "ir/code_generator.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/parser.hpp"
 #include "semantic/ast_printer.hpp"
 #include "semantic/semantic_analyzer.hpp"
-#include "icg/code_generator.hpp"
-#include "interpreter/interpreter.hpp"
+#include "vm/interpreter.hpp"
 
 enum class RunMode { Lexer, Parser, Semantic };
 
@@ -182,14 +182,14 @@ int main(int argc, char* argv[]) {
     analyzer.analyze();
 
     if (!diagnoser.has_error() && !dump && !dump_all) {
-      CodeGenerator icg(analyzer.getSymbolTable());
+      ir::CodeGenerator icg(analyzer.getSymbolTable());
       analyzer.getAst().accept(icg);
 
       std::cout << "\n=== INTERMEDIATE CODE ===\n";
       icg.printCode();
 
       std::cout << "\n=== EXECUTION OUTPUT ===\n";
-      Interpreter vm;
+      vm::Interpreter vm;
       if (!vm.execute(icg.getCode())) {
         return 1;
       }
@@ -269,5 +269,4 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 }
-
 

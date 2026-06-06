@@ -1,5 +1,8 @@
 #pragma once
+
 #include <string>
+
+namespace ir {
 
 enum class OpCode { LIT, LOD, STO, CAL, INT, JMP, JPC, OPR, RET, LDX, STX };
 
@@ -38,3 +41,5 @@ struct Instruction {
     }
   }
 };
+
+}  // namespace ir
