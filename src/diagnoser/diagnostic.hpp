@@ -4,7 +4,7 @@
 
 namespace diag {
 
-enum class Phase { LEXER, PARSER, SEMANTIC };
+enum class Phase { LEXER, PARSER, SEMANTIC, VM };
 
 enum class Level { ERROR, WARNING, INFO };
 

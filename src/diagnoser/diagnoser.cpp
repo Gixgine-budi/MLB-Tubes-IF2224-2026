@@ -57,6 +57,9 @@ std::ostream& Diagnoser::print(std::ostream& os, const Diagnostic& d) const {
     case Phase::SEMANTIC:
       os << "semantic ";
       break;
+    case Phase::VM:
+      os << "vm ";
+      break;
   }
 
   std::string_view level_color;

@@ -189,8 +189,9 @@ int main(int argc, char* argv[]) {
       icg.printCode();
 
       std::cout << "\n=== EXECUTION OUTPUT ===\n";
-      vm::Interpreter vm;
+      vm::Interpreter vm(diagnoser);
       if (!vm.execute(icg.getCode())) {
+        std::cerr << diagnoser;
         return 1;
       }
     }
@@ -269,4 +270,3 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 }
-

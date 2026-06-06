@@ -4,16 +4,73 @@
 #include <string>
 #include <vector>
 
+#include "diagnoser/diagnostic.hpp"
 #include "ir/instruction.hpp"
 
 namespace vm {
 
-Interpreter::Interpreter()
-    : s(kMaxStack, 0), pc(0), b(0), t(-1), call_depth(0) {}
+Interpreter::Interpreter(diag::Diagnoser& diagnoser)
+    : diagnoser_(diagnoser),
+      s(kMaxStack, 0),
+      pc(0),
+      current_instruction(0),
+      b(0),
+      t(-1),
+      call_depth(0) {}
 
-bool Interpreter::fail(const std::string& message) {
-  std::cerr << message << "\n";
+bool Interpreter::fail(const std::string& code, const std::string& detail) {
+  diagnoser_.report({diag::Phase::VM, diag::Level::ERROR, diag::Source{},
+                     runtimeMessage(code, detail), runtimeHint(code)});
   return false;
+}
+
+std::string Interpreter::runtimeMessage(const std::string& code,
+                                        const std::string& detail) const {
+  std::string message;
+  if (code == "StackUnderflowError") {
+    message = "runtime stack underflow";
+  } else if (code == "StackOverflowError") {
+    message = "runtime stack overflow";
+  } else if (code == "StackAccessError") {
+    message = "runtime stack memory access is outside the VM stack";
+  } else if (code == "InvalidJumpTarget") {
+    message = "runtime jump target is outside the generated instruction stream";
+  } else if (code == "DivisionByZeroError") {
+    message = "runtime division by zero";
+  } else if (code == "IndexOutOfBoundsException") {
+    message = "runtime array index is outside the array bounds";
+  } else if (code == "RangeCheckError") {
+    message = "runtime value is outside the target subrange bounds";
+  } else {
+    message = "runtime VM error";
+  }
+
+  message += " (" + code + ")";
+  if (!detail.empty()) {
+    message += ": " + detail;
+  }
+  message += " at instruction " + std::to_string(current_instruction);
+  return message;
+}
+
+std::string Interpreter::runtimeHint(const std::string& code) const {
+  if (code == "DivisionByZeroError") {
+    return "check that the right-hand operand of div, mod, or / is non-zero";
+  }
+  if (code == "RangeCheckError") {
+    return "check assignments, for-loop updates, and expressions stored into subrange variables";
+  }
+  if (code == "IndexOutOfBoundsException") {
+    return "check array index expressions against the declared array bounds";
+  }
+  if (code == "InvalidJumpTarget") {
+    return "this usually indicates invalid generated IR control flow";
+  }
+  if (code == "StackAccessError" || code == "StackUnderflowError" ||
+      code == "StackOverflowError") {
+    return "this usually indicates invalid generated IR stack usage";
+  }
+  return "";
 }
 
 bool Interpreter::checkStackPop() {
@@ -25,7 +82,9 @@ bool Interpreter::checkStackPop() {
 
 bool Interpreter::checkJumpTarget(int target, int code_size) {
   if (target < 0 || target >= code_size) {
-    return fail("InvalidJumpTarget");
+    return fail("InvalidJumpTarget",
+                "target " + std::to_string(target) + ", code size " +
+                    std::to_string(code_size));
   }
   return true;
 }
@@ -50,9 +109,13 @@ bool Interpreter::execute(const std::vector<ir::Instruction>& code) {
   ir::Instruction i;
   do {
     if (pc < 0 || pc >= static_cast<int>(code.size())) {
-      return fail("InvalidJumpTarget");
+      current_instruction = pc;
+      return fail("InvalidJumpTarget",
+                  "program counter " + std::to_string(pc) + ", code size " +
+                      std::to_string(code.size()));
     }
 
+    current_instruction = pc;
     i = code[pc++];
 
     switch (i.op) {
