@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <vector>
 
 #include "diagnoser/diagnoser.hpp"
@@ -33,6 +34,13 @@ class Lexer {
    * @return reference to the list of tokens
    */
   const std::vector<Token>& tokens() const { return tokens_; }
+
+  /**
+   * @brief Print the list of tokens to the output stream
+   *
+   * @param os the output stream
+   */
+  void print(std::ostream& os) const;
 
  private:
   io::CharMachine& reader_;     ///< Character reader

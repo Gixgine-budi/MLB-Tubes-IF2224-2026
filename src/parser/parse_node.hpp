@@ -73,12 +73,26 @@ class ParseNode {
     children_.push_back(std::move(child));
   }
 
-  void print(std::ostream& out, bool ascii = false) const;
-
+  /**
+   * @brief Output the node type and token (if any) in a human-readable format
+   *
+   * @param os the output stream
+   * @param node the parse node to be printed
+   * @return std::ostream& the (modified) output stream
+   */
   friend std::ostream& operator<<(std::ostream& os, const ParseNode& node);
 
-  void printRecursive(std::ostream& out, const std::string& prefix, bool isLast,
-                      bool ascii = false) const;
+  /**
+   * @brief Output the parse tree recursively to the output stream.
+   *
+   * @param out The output stream
+   * @param prefix The prefix string used for formatting the tree structure
+   * @param isLast Indicates if the current node is the last child of its parent
+   * @param ascii Print in ascii compatible format, otherwise print with
+   * non-ascii characters
+   */
+  void print(std::ostream& out, const std::string& prefix, bool isLast,
+             bool ascii = false) const;
 
  private:
   NodeType type_;

@@ -10,8 +10,7 @@
 
 namespace parser {
 
-static const lexer::Token eof_sentinel{
-    lexer::TokenType::INVALID, lexer::InvalidType::NotInvalid, "", 0, 0};
+static const lexer::Token eof_sentinel{};
 
 Parser::Parser(const std::string& filename,
                const std::vector<lexer::Token>& tokens,

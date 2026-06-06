@@ -36,8 +36,8 @@ class Parser {
    *
    *@param ascii whether to print the tree in ascii compatible only
    */
-  void printParseTree(std::ostream& out, bool ascii = false) const {
-    program_.printRecursive(out, "", true, ascii);
+  void print(std::ostream& out, bool ascii = false) const {
+    program_.print(out, "", true, ascii);
   }
 
   /**

@@ -50,34 +50,6 @@ bool useASCII() {
   return false;
 }
 
-void writeTokens(std::ostream& out, const std::vector<lexer::Token>& tokens) {
-  for (const auto& token : tokens) {
-    out << token << '\n';
-  }
-}
-
-void writeParseTree(std::ostream& out, const parser::Parser& parser,
-                    bool ascii) {
-  parser.printParseTree(out, ascii);
-}
-
-void writeAst(std::ostream& out, ast::AstNode& ast_root, bool ascii) {
-  semantic::ASTPrinter printer(out, ascii);
-  printer.print(ast_root);
-}
-
-void writeSymbolTable(std::ostream& out, const semantic::SymbolTable& symtab) {
-  symtab.printTab(out);
-}
-
-void writeArrayTable(std::ostream& out, const semantic::SymbolTable& symtab) {
-  symtab.printAtab(out);
-}
-
-void writeBlockTable(std::ostream& out, const semantic::SymbolTable& symtab) {
-  symtab.printBtab(out);
-}
-
 std::unique_ptr<std::ofstream> openOutputFile(const std::string& path) {
   auto file = std::make_unique<std::ofstream>(path);
   if (!file->is_open()) {
@@ -157,10 +129,10 @@ int main(int argc, char* argv[]) {
     auto writeTokenFile = [&]() {
       const std::string token_path = source_name + ".token";
       auto token_file = openOutputFile(token_path);
-      writeTokens(*token_file, tokens);
+      lexer.print(*token_file);
     };
 
-    auto dumpTokens = [&]() { writeTokens(std::cout, tokens); };
+    auto dumpTokens = [&]() { lexer.print(std::cout); };
 
     if (mode == RunMode::Lexer) {
       if (dump || dump_all) {
@@ -185,10 +157,10 @@ int main(int argc, char* argv[]) {
     auto writeParseTreeFile = [&]() {
       const std::string ptree_path = source_name + ".ptree";
       auto ptree_file = openOutputFile(ptree_path);
-      writeParseTree(*ptree_file, parser, ascii);
+      parser.print(*ptree_file);
     };
 
-    auto dumpParseTree = [&]() { writeParseTree(std::cout, parser, ascii); };
+    auto dumpParseTree = [&]() { parser.print(std::cout, ascii); };
 
     if (mode == RunMode::Parser) {
       if (dump) {
@@ -231,37 +203,41 @@ int main(int argc, char* argv[]) {
     auto writeAstFile = [&]() {
       const std::string ast_path = source_name + ".ast";
       auto ast_file = openOutputFile(ast_path);
-      writeAst(*ast_file, analyzer.getAst(), ascii);
+      semantic::ASTPrinter printer(*ast_file);
+      printer.print(analyzer.getAst());
     };
 
     auto writeSymTabFile = [&]() {
       const std::string tab_path = source_name + ".sym.tab";
       auto tab_file = openOutputFile(tab_path);
-      writeSymbolTable(*tab_file, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printTab(*tab_file);
     };
 
     auto writeSymAtabFile = [&]() {
       const std::string atab_path = source_name + ".sym.atab";
       auto atab_file = openOutputFile(atab_path);
-      writeArrayTable(*atab_file, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printAtab(*atab_file);
     };
 
     auto writeSymBtabFile = [&]() {
       const std::string btab_path = source_name + ".sym.btab";
       auto btab_file = openOutputFile(btab_path);
-      writeBlockTable(*btab_file, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printBtab(*btab_file);
     };
 
-    auto dumpAst = [&]() { writeAst(std::cout, analyzer.getAst(), ascii); };
+    auto dumpAst = [&]() {
+      semantic::ASTPrinter printer(std::cout, ascii);
+      printer.print(analyzer.getAst());
+    };
 
     auto dumpSemanticTables = [&]() {
       std::cout << "sym tab:\n";
       std::cout << "tab:\n";
-      writeSymbolTable(std::cout, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printTab(std::cout);
       std::cout << "\nbtab:\n";
-      writeBlockTable(std::cout, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printBtab(std::cout);
       std::cout << "\natab:\n";
-      writeArrayTable(std::cout, analyzer.getSymbolTable());
+      analyzer.getSymbolTable().printAtab(std::cout);
     };
 
     if (dump) {
