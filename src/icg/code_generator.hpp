@@ -19,6 +19,31 @@ private:
         return code.size() - 1; 
     }
 
+    // Push relative array index (index - low) onto the stack.
+    bool emitArrayRelativeIndex(ast::ArrayAccessNode& node, int& level_diff,
+                                int& base_adr) {
+        auto* ident = dynamic_cast<ast::IdentNode*>(node.array_expr.get());
+        if (ident == nullptr || ident->tab_index == 0 || node.indices.empty()) {
+            return false;
+        }
+
+        const auto& var_entry = sym_table.getTabEntry(ident->tab_index);
+        const auto& type_entry = sym_table.getTabEntry(var_entry.type);
+        if (type_entry.type != static_cast<int>(semantic::BuiltinType::Array) ||
+            type_entry.ref <= 0) {
+            return false;
+        }
+
+        const auto& atab_entry = sym_table.getAtabEntry(type_entry.ref);
+        level_diff = current_level - var_entry.lev;
+        base_adr = var_entry.adr;
+
+        node.indices[0]->accept(*this);
+        emit(OpCode::LIT, 0, atab_entry.low);
+        emit(OpCode::OPR, 0, 3);  // SUB: index - low
+        return true;
+    }
+
 public:
     CodeGenerator(const semantic::SymbolTable& st) : sym_table(st), current_level(0) {}
 
@@ -68,12 +93,25 @@ public:
     }
 
     void visit(ast::AssignNode& node) override {
-        node.expr->accept(*this); // Push RHS ke stack
+        if (auto* arr = dynamic_cast<ast::ArrayAccessNode*>(node.target.get())) {
+            int level_diff = 0;
+            int base_adr = 0;
+            if (!emitArrayRelativeIndex(*arr, level_diff, base_adr)) {
+                return;
+            }
+            node.expr->accept(*this);
+            emit(OpCode::STX, level_diff, base_adr);
+            return;
+        }
 
-        int tab_idx = node.target->tab_index;
-        const auto& entry = sym_table.getTabEntry(tab_idx);
+        node.expr->accept(*this);
+
+        auto* ident = dynamic_cast<ast::IdentNode*>(node.target.get());
+        if (ident == nullptr || ident->tab_index == 0) {
+            return;
+        }
+        const auto& entry = sym_table.getTabEntry(ident->tab_index);
         int level_diff = current_level - entry.lev;
-
         emit(OpCode::STO, level_diff, entry.adr);
     }
 
@@ -163,10 +201,22 @@ public:
     void visit(ast::TypeDeclNode&) override {}
     void visit(ast::ProcDeclNode&) override {}
     void visit(ast::FuncDeclNode&) override {}
-    void visit(ast::UnaryOpNode&) override {}
+    void visit(ast::UnaryOpNode& node) override {
+        node.expr->accept(*this);
+        if (node.op.type == lexer::TokenType::MINUS) {
+            emit(OpCode::OPR, 0, 1);  // NEG
+        }
+    }
     void visit(ast::StringNode&) override {}
     void visit(ast::FuncCallNode&) override {}
-    void visit(ast::ArrayAccessNode&) override {}
+    void visit(ast::ArrayAccessNode& node) override {
+        int level_diff = 0;
+        int base_adr = 0;
+        if (!emitArrayRelativeIndex(node, level_diff, base_adr)) {
+            return;
+        }
+        emit(OpCode::LDX, level_diff, base_adr);
+    }
     void visit(ast::RecordAccessNode&) override {}
     void visit(ast::RepeatNode&) override {}
     void visit(ast::ForNode&) override {}
