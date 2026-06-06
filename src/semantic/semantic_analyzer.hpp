@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "ast/ast_visitor.hpp"
 #include "ast/decl_nodes.hpp"
 #include "ast/expr_nodes.hpp"
@@ -88,6 +90,11 @@ class SemanticAnalyzer : public ast::ASTVisitor {
   void visit(ast::CompoundStmtNode &node) override;
 
  private:
+  struct ConstantValue {
+    int type = 0;
+    int value = 0;
+  };
+
   SDTBuilder sdt_builder_;
   SymbolTable sym_table;
   diag::Diagnoser &diagnoser_;
@@ -141,7 +148,7 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @param type_name Name of the type.
    * @return int Base type ID corresponding to the type name.
    */
-  int get_base_type(const std::string &type_name);
+  int get_base_type(const std::string &type_name) const;
 
   /**
    * @brief Check if an expression of a given type can be assigned to a target
@@ -152,6 +159,19 @@ class SemanticAnalyzer : public ast::ASTVisitor {
    * @return bool True if the assignment is compatible, false otherwise.
    */
   bool isAssignmentCompatible(int target_type, int expr_type);
+
+  int canonicalType(int type) const;
+  int scalarBaseType(int type) const;
+  bool isSubrangeType(int type) const;
+  bool isEnumeratedType(int type) const;
+  bool isBooleanLike(int type) const;
+  bool isOrdinalLike(int type) const;
+  bool isRelationalCompatible(int lhs_type, int rhs_type) const;
+  std::optional<ConstantValue> constantValue(const ast::AstNode &node) const;
+  bool checkSubrangeValue(int target_type, int value,
+                          const std::string &context);
+  void checkSubrangeAssignment(int target_type, const ast::AstNode &expr,
+                               const std::string &context);
 
   /**
    * @brief Create an internal anonymous type entry for composite/derived type

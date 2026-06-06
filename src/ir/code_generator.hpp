@@ -53,6 +53,11 @@ class CodeGenerator : public ast::ASTVisitor {
   bool emitArrayRelativeIndex(ast::ArrayAccessNode& node, int& level_diff,
                               int& base_adr, int& array_size);
   void emitProcOrFuncBody(ast::BlockNode* block, int block_ref);
+  void emitRangeCheck(int type_idx);
+  int canonicalType(int type_idx) const;
+  int subrangeRef(int type_idx) const;
+  int arrayElementType(ast::ArrayAccessNode& node) const;
+  void emitStore(OpCode op, int l, int a, int type_idx, int aux = 0);
 
   std::vector<Instruction> code;
   semantic::SymbolTable& sym_table;

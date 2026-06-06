@@ -4,7 +4,20 @@
 
 namespace ir {
 
-enum class OpCode { LIT, LOD, STO, CAL, INT, JMP, JPC, OPR, RET, LDX, STX };
+enum class OpCode {
+  LIT,
+  LOD,
+  STO,
+  CAL,
+  INT,
+  JMP,
+  JPC,
+  OPR,
+  RET,
+  LDX,
+  STX,
+  CHK
+};
 
 struct Instruction {
   OpCode op;
@@ -36,6 +49,8 @@ struct Instruction {
         return "LDX";
       case OpCode::STX:
         return "STX";
+      case OpCode::CHK:
+        return "CHK";
       default:
         return "???";
     }

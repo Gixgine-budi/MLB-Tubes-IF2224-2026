@@ -15,12 +15,14 @@ void SemanticAnalyzer::visit(ast::AssignNode& node) {
 
   if (!isAssignmentCompatible(target_type, expr_type)) {
     reportError("assignment type mismatch");
+  } else {
+    checkSubrangeAssignment(target_type, *node.expr, "assigned value");
   }
 }
 
 void SemanticAnalyzer::visit(ast::IfNode& node) {
   node.condition->accept(*this);
-  if (node.condition->expression_type != get_base_type("boolean")) {
+  if (!isBooleanLike(node.condition->expression_type)) {
     reportError("if condition must be boolean");
   }
   node.then_branch->accept(*this);
@@ -29,7 +31,7 @@ void SemanticAnalyzer::visit(ast::IfNode& node) {
 
 void SemanticAnalyzer::visit(ast::WhileNode& node) {
   node.condition->accept(*this);
-  if (node.condition->expression_type != get_base_type("boolean")) {
+  if (!isBooleanLike(node.condition->expression_type)) {
     reportError("while condition must be boolean");
   }
   node.body->accept(*this);
@@ -40,7 +42,7 @@ void SemanticAnalyzer::visit(ast::RepeatNode& node) {
     stmt->accept(*this);
   }
   node.condition->accept(*this);
-  if (node.condition->expression_type != get_base_type("boolean")) {
+  if (!isBooleanLike(node.condition->expression_type)) {
     reportError("repeat-until condition must be boolean");
   }
 }
@@ -49,8 +51,8 @@ void SemanticAnalyzer::visit(ast::ForNode& node) {
   auto entry = sym_table.lookup(node.iterator.lexeme);
   if (!entry) {
     reportError("undeclared iterator variable '" + node.iterator.lexeme + "'");
-  } else if (!isAssignmentCompatible(entry->type, get_base_type("integer"))) {
-    reportError("for-loop iterator must be integer or compatible subrange");
+  } else if (!isOrdinalLike(entry->type)) {
+    reportError("for-loop iterator must be an ordinal type");
   }
 
   node.initial->accept(*this);
@@ -58,10 +60,16 @@ void SemanticAnalyzer::visit(ast::ForNode& node) {
 
   if (entry) {
     if (!isAssignmentCompatible(entry->type, node.initial->expression_type)) {
-      reportError("for-loop initial value is not compatible with iterator type");
+      reportError(
+          "for-loop initial value is not compatible with iterator type");
+    } else {
+      checkSubrangeAssignment(entry->type, *node.initial,
+                              "for-loop initial value");
     }
     if (!isAssignmentCompatible(entry->type, node.final->expression_type)) {
       reportError("for-loop final value is not compatible with iterator type");
+    } else {
+      checkSubrangeAssignment(entry->type, *node.final, "for-loop final value");
     }
   }
 
@@ -77,9 +85,8 @@ void SemanticAnalyzer::visit(ast::ProcCallNode& node) {
   } else {
     node.tab_index = entry->idx;
     const std::string& name = node.id.lexeme;
-    const bool predefined_io =
-        name == "writeln" || name == "write" || name == "readln" ||
-        name == "read";
+    const bool predefined_io = name == "writeln" || name == "write" ||
+                               name == "readln" || name == "read";
     if (!predefined_io) {
       const int expected = countFormalParams(entry->idx);
       if (static_cast<int>(node.args.size()) != expected) {

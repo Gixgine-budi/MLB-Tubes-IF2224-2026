@@ -31,18 +31,8 @@ int SemanticAnalyzer::constIntValue(const ast::AstNode* node,
                                     int fallback) const {
   if (node == nullptr) return fallback;
 
-  if (const auto* num = dynamic_cast<const ast::NumberNode*>(node)) {
-    try {
-      return std::stoi(num->val.lexeme);
-    } catch (...) {
-      return fallback;
-    }
-  }
-
-  if (const auto* id = dynamic_cast<const ast::IdentNode*>(node)) {
-    if (auto entry = sym_table.lookup(id->id.lexeme)) {
-      return entry->adr;
-    }
+  if (auto value = constantValue(*node)) {
+    return value->value;
   }
 
   return fallback;
@@ -74,31 +64,48 @@ void SemanticAnalyzer::visit(ast::SimpleTypeSpecNode& node) {
 }
 
 void SemanticAnalyzer::visit(ast::SubrangeTypeSpecNode& node) {
-  const int int_t = get_base_type("integer");
-  const int char_t = get_base_type("char"); 
-
   if (node.low != nullptr) node.low->accept(*this);
   if (node.high != nullptr) node.high->accept(*this);
 
   int base_type = 0;
+  int low_value = 0;
+  int high_value = 0;
 
   if (node.low != nullptr && node.high != nullptr) {
-    int low_type = node.low->expression_type;
-    int high_type = node.high->expression_type;
+    const int low_type = node.low->expression_type;
+    const int high_type = node.high->expression_type;
+    const int low_base = scalarBaseType(low_type);
+    const int high_base = scalarBaseType(high_type);
+    const auto low_const = constantValue(*node.low);
+    const auto high_const = constantValue(*node.high);
 
-    if (low_type != int_t && low_type != char_t) {
-      reportError("subrange lower bound must be integer or char");
-    } 
-    else if (high_type != low_type) {
+    if (!isOrdinalLike(low_type)) {
+      reportError("subrange lower bound must be an ordinal type");
+    } else if (low_base != high_base) {
       reportError("subrange upper bound must match lower bound type");
-    } 
-    else {
-      base_type = low_type;
+    } else if (!low_const || !high_const) {
+      reportError("subrange bounds must be constant values");
+    } else {
+      base_type = low_base;
+      low_value = low_const->value;
+      high_value = high_const->value;
+      if (low_value > high_value) {
+        reportError("subrange lower bound must not exceed upper bound");
+      }
     }
   }
 
+  AtabEntry bounds{};
+  bounds.xtyp = base_type;
+  bounds.etyp = base_type;
+  bounds.low = low_value;
+  bounds.high = high_value;
+  bounds.elsz = 1;
+  bounds.size = high_value >= low_value ? (high_value - low_value + 1) : 1;
+
+  const int bounds_idx = sym_table.enterTab(bounds);
   node.expression_type =
-      makeAnonymousType(static_cast<int>(BuiltinType::Subrange), base_type);
+      makeAnonymousType(static_cast<int>(BuiltinType::Subrange), bounds_idx);
 }
 
 void SemanticAnalyzer::visit(ast::ArrayTypeSpecNode& node) {
@@ -182,6 +189,7 @@ void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
 
   node.value->accept(*this);
   const int const_type = node.value->expression_type;
+  const auto const_value = constantValue(*node.value);
 
   if (sym_table.lookupCurrentScope(node.identifier.lexeme)) {
     reportError("identifier '" + node.identifier.lexeme + "' already declared");
@@ -190,6 +198,9 @@ void SemanticAnalyzer::visit(ast::ConstDeclNode& node) {
 
   node.tab_index = sym_table.enterTab(node.identifier.lexeme,
                                       ObjClass::Constant, const_type);
+  if (const_value) {
+    sym_table.getTabEntry(node.tab_index).adr = const_value->value;
+  }
   node.expression_type = const_type;
 }
 

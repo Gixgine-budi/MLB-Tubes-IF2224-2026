@@ -28,6 +28,60 @@ int CodeGenerator::mainFrameSize() const {
   return 3 + size;
 }
 
+int CodeGenerator::canonicalType(int type_idx) const {
+  int current = type_idx;
+  while (current >= semantic::RESERVED) {
+    const auto& entry = sym_table.getTabEntry(current);
+    if (entry.obj == semantic::ObjClass::Type &&
+        entry.type >= semantic::RESERVED && entry.type != current) {
+      current = entry.type;
+      continue;
+    }
+    break;
+  }
+  return current;
+}
+
+int CodeGenerator::subrangeRef(int type_idx) const {
+  const int canonical = canonicalType(type_idx);
+  if (canonical < semantic::RESERVED) {
+    return 0;
+  }
+  const auto& entry = sym_table.getTabEntry(canonical);
+  if (entry.type == static_cast<int>(semantic::BuiltinType::Subrange)) {
+    return entry.ref;
+  }
+  return 0;
+}
+
+void CodeGenerator::emitRangeCheck(int type_idx) {
+  const int ref = subrangeRef(type_idx);
+  if (ref <= 0) {
+    return;
+  }
+  const auto& bounds = sym_table.getAtabEntry(ref);
+  emit(OpCode::CHK, bounds.low, bounds.high);
+}
+
+int CodeGenerator::arrayElementType(ast::ArrayAccessNode& node) const {
+  auto* ident = dynamic_cast<ast::IdentNode*>(node.array_expr.get());
+  if (ident == nullptr || ident->tab_index == 0) {
+    return 0;
+  }
+  const auto& var_entry = sym_table.getTabEntry(ident->tab_index);
+  const auto& type_entry = sym_table.getTabEntry(canonicalType(var_entry.type));
+  if (type_entry.type != static_cast<int>(semantic::BuiltinType::Array) ||
+      type_entry.ref <= 0) {
+    return 0;
+  }
+  return sym_table.getAtabEntry(type_entry.ref).etyp;
+}
+
+void CodeGenerator::emitStore(OpCode op, int l, int a, int type_idx, int aux) {
+  emitRangeCheck(type_idx);
+  emit(op, l, a, aux);
+}
+
 bool CodeGenerator::emitArrayRelativeIndex(ast::ArrayAccessNode& node,
                                            int& level_diff, int& base_adr,
                                            int& array_size) {
@@ -37,7 +91,7 @@ bool CodeGenerator::emitArrayRelativeIndex(ast::ArrayAccessNode& node,
   }
 
   const auto& var_entry = sym_table.getTabEntry(ident->tab_index);
-  const auto& type_entry = sym_table.getTabEntry(var_entry.type);
+  const auto& type_entry = sym_table.getTabEntry(canonicalType(var_entry.type));
   if (type_entry.type != static_cast<int>(semantic::BuiltinType::Array) ||
       type_entry.ref <= 0) {
     return false;
@@ -118,7 +172,8 @@ void CodeGenerator::visit(ast::AssignNode& node) {
       return;
     }
     node.expr->accept(*this);
-    emit(OpCode::STX, level_diff, base_adr, array_size);
+    emitStore(OpCode::STX, level_diff, base_adr, arrayElementType(*arr),
+              array_size);
     return;
   }
 
@@ -129,7 +184,7 @@ void CodeGenerator::visit(ast::AssignNode& node) {
       const auto& base = sym_table.getTabEntry(ident->tab_index);
       const auto& field = sym_table.getTabEntry(rec->tab_index);
       int level_diff = current_level - base.lev;
-      emit(OpCode::STO, level_diff, base.adr + field.adr);
+      emitStore(OpCode::STO, level_diff, base.adr + field.adr, field.type);
       return;
     }
   }
@@ -150,7 +205,7 @@ void CodeGenerator::visit(ast::AssignNode& node) {
       level_diff = 0;
     }
   }
-  emit(OpCode::STO, level_diff, target_adr);
+  emitStore(OpCode::STO, level_diff, target_adr, entry.type);
 }
 
 void CodeGenerator::visit(ast::IfNode& node) {
@@ -199,7 +254,7 @@ void CodeGenerator::visit(ast::ForNode& node) {
 
   node.initial->accept(*this);
   int level_diff = current_level - iter->lev;
-  emit(OpCode::STO, level_diff, iter->adr);
+  emitStore(OpCode::STO, level_diff, iter->adr, iter->type);
 
   int loop_start = static_cast<int>(code.size());
   emit(OpCode::LOD, level_diff, iter->adr);
@@ -213,7 +268,7 @@ void CodeGenerator::visit(ast::ForNode& node) {
   emit(OpCode::LOD, level_diff, iter->adr);
   emit(OpCode::LIT, 0, 1);
   emit(OpCode::OPR, 0, node.is_downto ? 3 : 2);
-  emit(OpCode::STO, level_diff, iter->adr);
+  emitStore(OpCode::STO, level_diff, iter->adr, iter->type);
 
   emit(OpCode::JMP, 0, loop_start);
   code[jpc_exit].a = static_cast<int>(code.size());
@@ -291,6 +346,10 @@ void CodeGenerator::visit(ast::NumberNode& node) {
 
 void CodeGenerator::visit(ast::IdentNode& node) {
   const auto& entry = sym_table.getTabEntry(node.tab_index);
+  if (entry.obj == semantic::ObjClass::Constant) {
+    emit(OpCode::LIT, 0, entry.adr);
+    return;
+  }
   int level_diff = current_level - entry.lev;
   emit(OpCode::LOD, level_diff, entry.adr);
 }

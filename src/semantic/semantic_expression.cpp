@@ -36,26 +36,31 @@ void SemanticAnalyzer::visit(ast::BinOpNode& node) {
   const int int_t = get_base_type("integer");
   const int real_t = get_base_type("real");
   const int bool_t = get_base_type("boolean");
+  const int l_base = scalarBaseType(l);
+  const int r_base = scalarBaseType(r);
 
   using T = lexer::TokenType;
   const T op = node.op.type;
 
   if (op == T::PLUS || op == T::MINUS || op == T::TIMES) {
-    if ((l == int_t || l == real_t) && (r == int_t || r == real_t)) {
-      node.expression_type = (l == real_t || r == real_t) ? real_t : int_t;
+    if ((l_base == int_t || l_base == real_t) &&
+        (r_base == int_t || r_base == real_t)) {
+      node.expression_type =
+          (l_base == real_t || r_base == real_t) ? real_t : int_t;
     } else {
       reportError("operands of '" + node.op.lexeme + "' must be numeric");
       node.expression_type = 0;
     }
   } else if (op == T::RDIV) {
-    if ((l == int_t || l == real_t) && (r == int_t || r == real_t)) {
+    if ((l_base == int_t || l_base == real_t) &&
+        (r_base == int_t || r_base == real_t)) {
       node.expression_type = real_t;
     } else {
       reportError("operands of '/' must be numeric");
       node.expression_type = 0;
     }
   } else if (op == T::IDIV || op == T::IMOD) {
-    if (l == int_t && r == int_t) {
+    if (l_base == int_t && r_base == int_t) {
       node.expression_type = int_t;
     } else {
       reportError("operands of '" + node.op.lexeme + "' must be integer");
@@ -63,8 +68,7 @@ void SemanticAnalyzer::visit(ast::BinOpNode& node) {
     }
   } else if (op == T::EQL || op == T::NEQ || op == T::LSS || op == T::GTR ||
              op == T::LEQ || op == T::GEQ) {
-    if (l == r ||
-        ((l == int_t || l == real_t) && (r == int_t || r == real_t))) {
+    if (isRelationalCompatible(l, r)) {
       node.expression_type = bool_t;
     } else {
       reportError("incompatible types for relational operator '" +
@@ -72,7 +76,7 @@ void SemanticAnalyzer::visit(ast::BinOpNode& node) {
       node.expression_type = 0;
     }
   } else if (op == T::ANDSY || op == T::ORSY) {
-    if (l == bool_t && r == bool_t) {
+    if (isBooleanLike(l) && isBooleanLike(r)) {
       node.expression_type = bool_t;
     } else {
       reportError("operands of '" + node.op.lexeme + "' must be boolean");
@@ -89,7 +93,7 @@ void SemanticAnalyzer::visit(ast::UnaryOpNode& node) {
   const T op = node.op.type;
 
   if (op == T::NOTSY) {
-    if (node.expr->expression_type != get_base_type("boolean")) {
+    if (!isBooleanLike(node.expr->expression_type)) {
       reportError("operand of 'not' must be boolean");
     }
     node.expression_type = get_base_type("boolean");
@@ -97,8 +101,9 @@ void SemanticAnalyzer::visit(ast::UnaryOpNode& node) {
     const int int_t = get_base_type("integer");
     const int real_t = get_base_type("real");
     const int t = node.expr->expression_type;
-    if (t == int_t || t == real_t) {
-      node.expression_type = t;
+    const int base = scalarBaseType(t);
+    if (base == int_t || base == real_t) {
+      node.expression_type = base;
     } else {
       reportError("unary sign operator requires numeric operand");
       node.expression_type = 0;
@@ -133,21 +138,26 @@ void SemanticAnalyzer::visit(ast::FuncCallNode& node) {
 void SemanticAnalyzer::visit(ast::ArrayAccessNode& node) {
   node.array_expr->accept(*this);
 
-  for (auto& idx : node.indices) {
-    idx->accept(*this);
-    if (idx->expression_type == get_base_type("real")) {
-      reportError("array index must not be real");
-    }
-  }
-
   const int array_type_idx = node.array_expr->expression_type;
   if (array_type_idx > 0) {
     const auto& type_entry = sym_table.getTabEntry(array_type_idx);
     if (type_entry.ref > 0) {
       const auto& array_info = sym_table.getAtabEntry(type_entry.ref);
+      for (auto& idx : node.indices) {
+        idx->accept(*this);
+        if (!isAssignmentCompatible(array_info.xtyp, idx->expression_type)) {
+          reportError("array index type is incompatible with array bounds");
+        } else {
+          checkSubrangeAssignment(array_info.xtyp, *idx, "array index");
+        }
+      }
       node.expression_type = array_info.etyp;
       return;
     }
+  }
+
+  for (auto& idx : node.indices) {
+    idx->accept(*this);
   }
 
   reportError("invalid array access");

@@ -266,6 +266,12 @@ bool Interpreter::execute(const std::vector<ir::Instruction>& code) {
         s[base + i.a + rel] = val;
         break;
       }
+      case ir::OpCode::CHK:
+        if (!checkStackPop()) return false;
+        if (s[t] < i.l || s[t] > i.a) {
+          return fail("RangeCheckError");
+        }
+        break;
     }
   } while (pc != 0);
 
