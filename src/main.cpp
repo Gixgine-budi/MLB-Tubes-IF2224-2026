@@ -19,7 +19,7 @@
 #include "semantic/semantic_analyzer.hpp"
 #include "vm/interpreter.hpp"
 
-enum class RunMode { Lexer, Parser, Semantic };
+enum class RunMode { Execute, Lexer, Parser, Semantic, Ir };
 
 namespace {
 
@@ -63,7 +63,7 @@ std::unique_ptr<std::ofstream> openOutputFile(const std::string& path) {
 
 int main(int argc, char* argv[]) {
   std::string source_name;
-  RunMode mode = RunMode::Semantic;
+  RunMode mode = RunMode::Execute;
   bool dump = false;
   bool dump_all = false;
 
@@ -76,6 +76,8 @@ int main(int argc, char* argv[]) {
         mode = RunMode::Parser;
       } else if (arg == "--semantic" || arg == "-s") {
         mode = RunMode::Semantic;
+      } else if (arg == "--ir" || arg == "-i") {
+        mode = RunMode::Ir;
       } else if (arg == "--dump" || arg == "-d") {
         dump = true;
       } else if (arg == "--dump-all") {
@@ -134,16 +136,21 @@ int main(int argc, char* argv[]) {
 
     auto dumpTokens = [&]() { lexer.print(std::cout); };
 
-    if (mode == RunMode::Lexer) {
-      if (dump || dump_all) {
-        if (dump_all) {
-          std::cout << "tokens:\n";
-        }
-        dumpTokens();
-      } else {
-        writeTokenFile();
+    auto dumpSection = [dump_all](const std::string& title, auto&& write) {
+      std::cout << "\n" << title << ":\n---\n";
+      write();
+      if (dump_all) {
+        std::cout << "---\n";
       }
+    };
+
+    if (mode == RunMode::Lexer && !dump && !dump_all) {
+      writeTokenFile();
       return 0;
+    }
+
+    if (dump_all || (dump && mode == RunMode::Lexer)) {
+      dumpSection("tokens", dumpTokens);
     }
 
     parser::Parser parser(source_name, tokens, diagnoser);
@@ -162,40 +169,18 @@ int main(int argc, char* argv[]) {
 
     auto dumpParseTree = [&]() { parser.print(std::cout, ascii); };
 
-    if (mode == RunMode::Parser) {
-      if (dump) {
-        dumpParseTree();
-      } else if (dump_all) {
-        std::cout << "tokens:\n";
-        dumpTokens();
-        std::cout << "\nparse tree:\n";
-        dumpParseTree();
-      } else {
-        writeTokenFile();
-        writeParseTreeFile();
-      }
-
+    if (mode == RunMode::Parser && !dump && !dump_all) {
+      writeParseTreeFile();
       return 0;
+    }
+
+    if (dump_all || (dump && mode == RunMode::Parser)) {
+      dumpSection("parse tree", dumpParseTree);
     }
 
     semantic::SemanticAnalyzer analyzer(parser.program(), diagnoser);
     analyzer.analyze();
 
-    if (!diagnoser.has_error() && !dump && !dump_all) {
-      ir::CodeGenerator icg(analyzer.getSymbolTable());
-      analyzer.getAst().accept(icg);
-
-      std::cout << "\n=== INTERMEDIATE CODE ===\n";
-      icg.printCode();
-
-      std::cout << "\n=== EXECUTION OUTPUT ===\n";
-      vm::Interpreter vm(diagnoser);
-      if (!vm.execute(icg.getCode())) {
-        std::cerr << diagnoser;
-        return 1;
-      }
-    }
-    
     if (diagnoser.has_error()) {
       std::cerr << diagnoser;
       return 1;
@@ -232,37 +217,53 @@ int main(int argc, char* argv[]) {
     };
 
     auto dumpSemanticTables = [&]() {
-      std::cout << "sym tab:\n";
-      std::cout << "tab:\n";
       analyzer.getSymbolTable().printTab(std::cout);
-      std::cout << "\nbtab:\n";
+      std::cout << "---\n\nblock table:\n---\n";
       analyzer.getSymbolTable().printBtab(std::cout);
-      std::cout << "\natab:\n";
+      std::cout << "---\n\narray table:\n---\n";
       analyzer.getSymbolTable().printAtab(std::cout);
     };
 
-    if (dump) {
-      std::cout << "ast:\n";
-      dumpAst();
-      std::cout << '\n';
-      dumpSemanticTables();
-    } else if (dump_all) {
-      std::cout << "tokens:\n";
-      dumpTokens();
-      std::cout << "\nparse tree:\n";
-      dumpParseTree();
-      std::cout << "\nast:\n";
-      dumpAst();
-      std::cout << '\n';
-      dumpSemanticTables();
-    } else {
-      writeTokenFile();
-      writeParseTreeFile();
+    if (mode == RunMode::Semantic && !dump && !dump_all) {
       writeAstFile();
       writeSymTabFile();
       writeSymAtabFile();
       writeSymBtabFile();
+      return 0;
     }
+
+    if (dump_all || (dump && mode == RunMode::Semantic)) {
+      dumpSection("ast", dumpAst);
+      dumpSection("symbol table", dumpSemanticTables);
+    }
+
+    ir::CodeGenerator icg(analyzer.getSymbolTable());
+    analyzer.getAst().accept(icg);
+
+    auto writeIrFile = [&]() {
+      const std::string ir_path = source_name + ".ir";
+      auto ir_file = openOutputFile(ir_path);
+      icg.print(*ir_file);
+    };
+
+    auto dumpIr = [&]() { icg.print(std::cout); };
+
+    if (mode == RunMode::Ir && !dump && !dump_all) {
+      writeIrFile();
+      return 0;
+    }
+
+    if (dump_all ||
+        (dump && (mode == RunMode::Ir || mode == RunMode::Execute))) {
+      dumpSection("ir", dumpIr);
+    }
+
+    vm::Interpreter vm(diagnoser);
+    if (!vm.execute(icg.getCode())) {
+      std::cerr << diagnoser;
+      return 1;
+    }
+
     return 0;
 
   } catch (const std::exception& e) {

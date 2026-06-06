@@ -389,6 +389,14 @@ void SymbolTable::printAtab(std::ostream& out) const {
   out << std::string(elsz_width + 2, '-') << '|';
   out << std::string(size_width + 2, '-') << "|\n";
 
+  if (atab.size() <= 1) {
+    out << "| empty "
+        << std::setw(idx_width + xtyp_width + etyp_width + eref_width +
+                     low_width + high_width + elsz_width + size_width + 18)
+        << std::right << "|\n";
+    return;
+  }
+
   for (std::size_t i = 1; i < atab.size(); ++i) {
     const auto& entry = atab[i];
     out << "| " << std::setw(idx_width) << std::right << entry.idx << " | "
@@ -422,6 +430,14 @@ void SymbolTable::printBtab(std::ostream& out) const {
   out << std::string(lpar_width + 2, '-') << '|';
   out << std::string(psze_width + 2, '-') << '|';
   out << std::string(vsze_width + 2, '-') << "|\n";
+
+  if (btab.size() <= 1) {
+    out << "| empty "
+        << std::setw(idx_width + last_width + lpar_width + psze_width +
+                     vsze_width + 7)
+        << std::right << "|\n";
+    return;
+  }
 
   for (const auto& entry : btab) {
     out << "| " << std::setw(idx_width) << std::right << entry.idx << " | "

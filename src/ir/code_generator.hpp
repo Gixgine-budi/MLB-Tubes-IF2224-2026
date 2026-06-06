@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <vector>
 
 #include "ast/ast_visitor.hpp"
@@ -17,7 +18,7 @@ class CodeGenerator : public ast::ASTVisitor {
   explicit CodeGenerator(semantic::SymbolTable& st);
 
   const std::vector<Instruction>& getCode() const;
-  void printCode() const;
+  void print(std::ostream& out) const;
 
   void visit(ast::ProgramNode& node) override;
   void visit(ast::BlockNode& node) override;

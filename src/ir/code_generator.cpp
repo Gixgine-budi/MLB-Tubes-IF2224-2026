@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <iostream>
+#include <ostream>
 #include <string>
 
 #include "lexer/token.hpp"
@@ -117,14 +117,14 @@ void CodeGenerator::emitProcOrFuncBody(ast::BlockNode* block, int block_ref) {
   emit(OpCode::RET, 0, 0);
 }
 
-void CodeGenerator::printCode() const {
+void CodeGenerator::print(std::ostream& out) const {
   for (size_t i = 0; i < code.size(); ++i) {
-    std::cout << i << " " << code[i].toString() << " " << code[i].l << " "
-              << code[i].a;
+    out << i << " " << code[i].toString() << " " << code[i].l << " "
+        << code[i].a;
     if (code[i].aux != 0) {
-      std::cout << " " << code[i].aux;
+      out << " " << code[i].aux;
     }
-    std::cout << "\n";
+    out << "\n";
   }
 }
 
