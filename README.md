@@ -77,7 +77,7 @@ cmake --build build
 
 ### Menjalankan Program
 
-* Langsung menjalankan executable. Hasil parsing ada di `path/to/source.txt.ptree`.
+* Langsung menjalankan source code. Kode tanpa flag akan langsung mengeksekusi kode. 
 ```sh
 ./arion path/to/source.txt --optional-flags
 ```
@@ -86,9 +86,9 @@ cmake --build build
   - `--lexer`: Hanya menjalankan lexer dan menyimpan token yang dihasilkan ke file `.token`
   - `--parser`: Menjalankan lexer dan parser, menyimpan parse tree yang dihasilkan ke file `.ptree`
   - `--semantic`: Menjalankan lexer, parser, dan semantic analyzer, menyimpan decorated AST ke file `.ast` dan symbol table ke file `.sym`
-  - `--ir` : Menjalankan seluruh pipeline (lexer, parser, semantic) dan menghasilkan intermediate representation (IR) ke file `.ir`
-  - `--dump`: Digunakan bersamaan dengan flag lain untuk mencetak hasil terakhir ke terminal
-  - `--dump-all`: Mencetak hasil dari semua tahap (lexer, parser, semantic) ke terminal
+  - `--ir` : Menjalankan seluruh pipeline (lexer, parser, semantic) dan menghasilkan intermediate representation (IR) ke file `.ir` tanpa mengeksekusi program
+  - `--dump`: Digunakan bersamaan dengan flag lain untuk mencetak hasil terakhir ke terminal, lalu mengeksekusi program
+  - `--dump-all`: Mencetak hasil dari semua tahap (lexer, parser, semantic, dan ir) ke terminal lalu mengeksekusi program
 
 ## Kontributor
 

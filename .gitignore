@@ -38,3 +38,4 @@ core.*
 *.sym.tab
 *.sym.atab
 *.sym.btab
+*.ir
